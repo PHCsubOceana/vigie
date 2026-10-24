@@ -1,0 +1,15 @@
+dependencies:
+  idf: ">=6.0"
+  # Écran rond 800×800, tactile et LVGL (Waveshare)
+  waveshare/esp32_p4_wifi6_touch_lcd_xc: "^3.0.1"
+  # Wi-Fi par la puce ESP32-C6 de la carte (mêmes versions que l'exemple station d'ESP-IDF 6.1)
+  espressif/esp_wifi_remote: ">=0.10,<2.0"
+  espressif/esp_hosted: "~2"
+  # Sortis d'ESP-IDF à partir de la version 6
+  espressif/mqtt: "^1.1.0"
+  espressif/cjson: "^1.7.19"
+  # Caméra MIPI-CSI (OV5647), ISP et V4L2
+  espressif/esp_video: ">=2.4,<3"
+  # Détection de visage. Si ESP-DL refuse de compiler, mettre cette ligne en
+  # commentaire : le firmware garde la caméra et l'aperçu, sans le visage.
+  espressif/human_face_detect: ">=0.5,<1"

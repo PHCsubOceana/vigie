@@ -1,0 +1,65 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s --connect-timeout 1 -m 2 -X POST http://jetson.local:8765/event -H \"Content-Type: application/json\" -H \"X-Vigie-Token: TON_JETON\" --data-binary @- || true"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s --connect-timeout 1 -m 2 -X POST http://jetson.local:8765/event -H \"Content-Type: application/json\" -H \"X-Vigie-Token: TON_JETON\" --data-binary @- || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s --connect-timeout 1 -m 2 -X POST http://jetson.local:8765/event -H \"Content-Type: application/json\" -H \"X-Vigie-Token: TON_JETON\" --data-binary @- || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s --connect-timeout 1 -m 2 -X POST http://jetson.local:8765/event -H \"Content-Type: application/json\" -H \"X-Vigie-Token: TON_JETON\" --data-binary @- || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s --connect-timeout 1 -m 2 -X POST http://jetson.local:8765/event -H \"Content-Type: application/json\" -H \"X-Vigie-Token: TON_JETON\" --data-binary @- || true"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s --connect-timeout 1 -m 2 -X POST http://jetson.local:8765/event -H \"Content-Type: application/json\" -H \"X-Vigie-Token: TON_JETON\" --data-binary @- || true"
+          }
+        ]
+      }
+    ]
+  }
+}

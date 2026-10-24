@@ -1,0 +1,88 @@
+# Vigie — tri du courrier.
+# Copié en ~/vigie/courrier.toml par l'installation (droits 600 : il contient des
+# mots de passe). Après une modification : sudo systemctl restart vigie-courrier
+
+# Relève toutes les 2 minutes ; un mail important reste affiché 48 h au plus
+# (il disparaît dès qu'il est lu, où que ce soit).
+intervalle_s = 120
+garder_h = 48
+
+# --- Comptes ---------------------------------------------------------------------
+# Un bloc [[compte]] par boîte. « nom » est court : il apparaît sur l'écran (« Courrier pro »).
+
+# Boîte OVH (offre MX Plan / e-mail de l'hébergement) : mot de passe de la boîte elle-même.
+# Pour une boîte « Exchange » chez OVH, le serveur est ex?.mail.ovh.net (voir l'espace client).
+[[compte]]
+nom = "pro"
+serveur = "ssl0.ovh.net"
+utilisateur = "adresse@mondomaine.fr"
+mot_de_passe = "..."
+
+# Microsoft 365 (pro) et Outlook.com / Hotmail : Microsoft refuse les mots de passe en
+# IMAP. Il faut OAuth2 : remplir la section [microsoft] plus bas, puis une fois par compte
+#     python3 ~/vigie/vigie-courrier.py --connexion bureau
+[[compte]]
+nom = "bureau"
+auth = "microsoft"
+utilisateur = "adresse@entreprise.fr"
+
+[[compte]]
+nom = "perso"
+auth = "microsoft"
+utilisateur = "adresse@outlook.fr"
+
+# Options d'un compte, au besoin :
+#   dossier = "INBOX"                 dossier surveillé
+#   dossier_envoyes = "Sent Items"    si les envois ne sont pas trouvés seuls
+#   apprendre_contacts = false        ne pas lire les envois de cette boîte
+
+[microsoft]
+# Identifiant de l'application « Vigie » enregistrée dans Microsoft Entra (voir README).
+client_id = "00000000-0000-0000-0000-000000000000"
+# « common » convient aux comptes pro et personnels.
+tenant = "common"
+
+# --- Contacts connus : toujours importants ----------------------------------------
+# Appris tout seuls : toute adresse à qui tu as écrit (dossier « Envoyés » de chaque
+# boîte, relu toutes les 6 h). En plus, les contacts de ton CRM HubSpot si tu donnes un
+# jeton d'« application privée » HubSpot avec le droit crm.objects.contacts.read.
+[hubspot]
+jeton = ""
+
+# --- Règles ------------------------------------------------------------------------
+[regles]
+# Expéditeur (nom, adresse ou domaine, en minuscules) : toujours important.
+toujours = [
+    # "@mondomaine.fr",
+]
+# Objet (début ou extrait, accents et majuscules indifférents) : toujours important,
+# même envoyé par un robot. Ici, les actions de prospects notifiées par HubSpot.
+objets_importants = [
+    "rendez-vous a été pris",
+    "vous avez été réservé par",
+    "nouvelle soumission sur le formulaire",
+]
+# Jamais important, même si le LLM en doute.
+jamais = [
+    "@linkedin.com",
+    "@facebookmail.com",
+    "newsletter",
+]
+# Dans l'objet d'un envoi en masse (banque, administration…), ces mots le font
+# quand même examiner. Sans LLM, ils suffisent à le rendre important.
+mots_urgents = ["urgent", "impayé", "relance", "échéance", "facture", "devis",
+                "contrat", "rendez-vous", "rdv", "rappel de paiement"]
+
+[llm]
+actif = true
+# Ce qui compte pour toi : le LLM s'en sert pour trancher les mails d'inconnus.
+# Ton prénom : le LLM sait ainsi quand un mail s'adresse à toi.
+prenom = "Camille"
+contexte = """Camille dirige une petite agence (sites web, vidéo). Comptent pour elle :
+clients, prospects, partenaires, administratif à échéance, famille et amis."""
+# modele = "llama3.2:3b-instruct-q5_K_M"
+
+[ecran]
+# Chaque boîte qui a du courrier important apparaît comme un agent sur l'écran rond
+# (« Courrier pro : 2 mails importants ») tant qu'un mail important n'est pas lu.
+agents = true

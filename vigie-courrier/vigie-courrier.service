@@ -1,0 +1,17 @@
+[Unit]
+Description=Vigie - tri du courrier
+# Suit le cerveau : « sudo systemctl stop vigie » arrête aussi le tri (GPU libre pour d'autres usages)
+PartOf=vigie.service
+After=network-online.target mosquitto.service ollama.service vigie.service
+Wants=network-online.target
+
+[Service]
+User=__USER__
+WorkingDirectory=__DIR__
+EnvironmentFile=__DIR__/vigie.env
+ExecStart=/usr/bin/python3 __DIR__/vigie-courrier.py
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=vigie.service multi-user.target

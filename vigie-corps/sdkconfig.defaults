@@ -1,0 +1,47 @@
+# Carte Waveshare ESP32-P4-WIFI6-Touch-LCD-3.4C, puce révision v1.3
+CONFIG_IDF_TARGET="esp32p4"
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+CONFIG_ESP32P4_REV_MIN_100=y
+
+# 32 Mo de flash, application jusqu'à 8 Mo
+CONFIG_ESPTOOLPY_FLASHSIZE_32MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Mémoire PSRAM (tampons d'écran)
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_SPEED_200M=y
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+
+# Recommandé par ESP-Hosted et par le pilote d'écran
+CONFIG_FREERTOS_HZ=1000
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# LVGL 9.6 a déprécié ses en-têtes src/, encore inclus par esp_lvgl_adapter :
+# l'avertissement ne doit pas devenir une erreur.
+CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS=y
+
+# Sinon « sleep_clock_icg_init … failed to allocate memory » puis abort() au démarrage.
+# La veille légère n'est pas utilisée.
+# CONFIG_PM_SLEEP_CLK_ICG_ENABLE is not set
+
+# Écran rond 3,4 pouces
+CONFIG_BSP_LCD_TYPE_800_800_3_4_INCH=y
+
+# LVGL
+CONFIG_LV_USE_CLIB_MALLOC=y
+CONFIG_LV_USE_CLIB_STRING=y
+CONFIG_LV_USE_CLIB_SPRINTF=y
+CONFIG_LV_OS_FREERTOS=y
+CONFIG_LV_DEF_REFR_PERIOD=15
+
+# Caméra OV5647 en MIPI-CSI, 800 × 800 à 50 i/s (comme l'exemple Waveshare pour l'écran 3,4")
+CONFIG_CAMERA_OV5647=y
+CONFIG_CAMERA_OV5647_MIPI_RAW8_800X800_50FPS=y
+CONFIG_CAMERA_OV5647_MIPI_DEFAULT_FMT_RAW8_800X800_50FPS=y
+
+# Contrôleur ISP (exposition et balance des blancs auto) désactivé :
+# sur puce v1.3, esp_ipa pour IDF 6 plante (Illegal instruction, esp-video-components #99).
+# À réactiver quand une version corrigée d'esp_video sera publiée.
+# CONFIG_ESP_VIDEO_ENABLE_ISP_PIPELINE_CONTROLLER is not set

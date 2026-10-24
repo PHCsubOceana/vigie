@@ -1,0 +1,70 @@
+menu "Vigie"
+
+    config VIGIE_WIFI_SSID
+        string "Réseau Wi-Fi (2,4 GHz)"
+        default ""
+        help
+            Nom du réseau Wi-Fi de la maison. La carte ne capte que le 2,4 GHz.
+
+    config VIGIE_WIFI_PASSWORD
+        string "Mot de passe Wi-Fi"
+        default ""
+
+    config VIGIE_MQTT_URI
+        string "Adresse du broker MQTT (Jetson)"
+        default "mqtt://192.168.1.50:1883"
+        help
+            Remplacer 192.168.1.50 par l'adresse IP du Jetson (à réserver dans la box).
+
+    config VIGIE_MQTT_USER
+        string "Utilisateur MQTT"
+        default "vigie"
+
+    config VIGIE_MQTT_PASSWORD
+        string "Mot de passe MQTT"
+        default ""
+
+    config VIGIE_VOLUME
+        int "Volume au premier démarrage (0 = muet)"
+        range 0 100
+        default 60
+        help
+            Ensuite, le volume se règle sur l'écran (toucher bref) et reste en mémoire.
+
+    menu "Caméra"
+
+        config VIGIE_CAMERA
+            bool "Caméra OV5647 (connecteur MIPI-CSI)"
+            default y
+
+        config VIGIE_CAM_HFLIP
+            int "Miroir horizontal du capteur (0 ou 1)"
+            range 0 1
+            default 1
+            depends on VIGIE_CAMERA
+            help
+                Dans l'aperçu (qui est un miroir), lever la main droite doit la montrer
+                du côté droit de l'écran. Sinon, changer cette valeur.
+
+        config VIGIE_CAM_VFLIP
+            int "Retournement vertical du capteur (0 ou 1)"
+            range 0 1
+            default 1
+            depends on VIGIE_CAMERA
+            help
+                Si l'aperçu est à l'envers, changer cette valeur.
+
+        config VIGIE_VISAGE
+            bool "Détection de visage (ESP-DL)"
+            default y
+            depends on VIGIE_CAMERA
+
+        config VIGIE_ABSENCE_S
+            int "Secondes sans visage avant de publier « absent »"
+            default 60
+            range 5 3600
+            depends on VIGIE_CAMERA
+
+    endmenu
+
+endmenu

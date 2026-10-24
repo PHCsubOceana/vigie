@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+# Secrets et données locales : ne jamais publier
+vigie.env
+courrier.toml
+courrier-*.json
+*.jsonl
+postes.json
+# ESP-IDF
+build/
+managed_components/
+sdkconfig
+sdkconfig.old
+dependencies.lock
