@@ -1,0 +1,6 @@
+# Les scripts tournent sous Linux (Jetson) ou Git Bash : toujours des fins de ligne LF,
+# même sur un clone Windows, sinon bash échoue sur « $'\r' ».
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary

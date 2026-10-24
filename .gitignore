@@ -12,3 +12,6 @@ managed_components/
 sdkconfig
 sdkconfig.old
 dependencies.lock
+# Claude Code : réglages personnels
+CLAUDE.local.md
+.claude/settings.local.json
