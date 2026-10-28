@@ -15,11 +15,19 @@ l'écran rond 800 × 800.
 
 ## Gestes
 
-- **Toucher bref** : réglage du volume (arc + « Couper le son »). Quand une alerte courrier
-  est affichée, le toucher bref ouvre la **fiche des mails** : toucher un mail le marque « vu »
-  sur l'écran (pas dans la boîte), toucher ailleurs ferme la fiche.
-- **Appui long** : aperçu de la caméra (disque central, en miroir, avec le cadre du visage).
-  Il se ferme seul après 2 min. À distance : `mosquitto_pub … -t vigie/commande -m camera`.
+- **Toucher** : ouvre les **réglages**, trois lignes à toucher :
+  - **Son** : réglage du volume (arc + « Couper le son »).
+  - **Wi-Fi** : les réseaux à portée (2,4 GHz), avec la force du signal. Toucher un réseau
+    demande son mot de passe (clavier AZERTY à l'écran), puis l'essaie. S'il répond, il est
+    gardé en mémoire et remplace celui du `sdkconfig` ; sinon la Vigie revient au réseau
+    d'avant et dit pourquoi (mot de passe refusé, réseau introuvable…).
+  - **Caméra** : aperçu (disque central, en miroir, avec le cadre du visage). Un toucher le
+    ferme ; il se ferme seul après 2 min. À distance : `mosquitto_pub … -t vigie/commande -m camera`.
+
+  Les réglages se ferment d'un toucher dans le vide, ou seuls après un moment sans geste.
+- Quand une alerte courrier est affichée, le toucher ouvre la **fiche des mails** : toucher un
+  mail le marque « vu » sur l'écran (pas dans la boîte), toucher ailleurs ferme la fiche.
+  L'enveloppe en haut l'ouvre aussi.
 
 ## Sons
 
@@ -86,8 +94,9 @@ avertissement sur la version du firmware de la puce Wi-Fi au démarrage est sans
 
 | Fichier | Rôle |
 |---|---|
-| `main/main.c` | Wi-Fi, MQTT, lecture du JSON, gestes |
-| `main/ui.c` | Tout le dessin (LVGL 9), sans dépendance à ESP-IDF |
+| `main/main.c` | MQTT, lecture du JSON, liens entre les modules |
+| `main/wifi.c` | Wi-Fi par la C6 : recherche des réseaux, essai, réseau gardé en NVS |
+| `main/ui.c` | Tout le dessin (LVGL 9) et les réglages, sans dépendance à ESP-IDF |
 | `main/son.c` | Sons synthétisés (codec ES8311) |
 | `main/camera.c` | Caméra (esp_video, V4L2), aperçu, regard et présence |
 | `main/visage.cpp` | Détection de visage (ESP-DL) |

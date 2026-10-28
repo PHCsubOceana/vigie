@@ -11,8 +11,8 @@
  *
  * Un mail important qui arrive prend le centre pendant 20 s (anneau corail).
  * Toucher l'enveloppe ou la ligne corail (ou l'écran pendant l'alerte) : fiche courrier.
- * Toucher bref ailleurs : réglage du volume. Appui long : ouvre l'aperçu de la caméra
- * (disque central) ; un toucher sur l'aperçu le ferme.
+ * Toucher ailleurs : fenêtre des réglages (Son, Wi-Fi, Caméra). La caméra s'ouvre en
+ * disque central ; un toucher sur l'aperçu le ferme.
  */
 #include <stdint.h>
 #include <stdio.h>
@@ -40,6 +40,8 @@ LV_FONT_DECLARE(vigie_chiffres_96);
 #define C_ARDOISE       lv_color_hex(0x6B7A99)
 #define C_GRIS          lv_color_hex(0x4A5366)
 #define C_CORAIL        lv_color_hex(0xFF7A8A)
+#define C_CARTE         lv_color_hex(0x1B2230)   /* fond des boutons et des lignes */
+#define C_CARTE_APPUI   lv_color_hex(0x2A3448)
 
 #define ALERTE_MS       20000   /* durée de l'alerte « nouveau mail » */
 
@@ -104,11 +106,13 @@ static vigie_courrier_t courrier;
 static bool alerte = false;
 static bool apercu_visible = false;
 static lv_timer_t *minuterie_alerte = NULL;
-static void (*rappel_toucher)(void) = NULL;
+static void (*rappel_camera)(void) = NULL;
 
 static void redessiner(void);
-static void sur_appui_long(lv_event_t *e);
+static void sur_toucher_ecran(lv_event_t *e);
 static void creer_reglage_volume(lv_obj_t *ecran);
+static void creer_reglages(lv_obj_t *ecran);
+static void maj_page_reglages(void);
 static void creer_fiche_courrier(lv_obj_t *ecran);
 static void sur_toucher_courrier(lv_event_t *e);
 static void sur_carte(lv_event_t *e);
@@ -185,17 +189,27 @@ static void lancer_respiration(const style_humeur_t *s)
 
 /* --- Toucher ---------------------------------------------------------------------- */
 
-static void sur_clic(lv_event_t *e)
+static void sur_camera(lv_event_t *e)
 {
     (void)e;
-    if (rappel_toucher) {
-        rappel_toucher();
+    if (rappel_camera) {
+        rappel_camera();
     }
 }
 
-void ui_sur_toucher(void (*rappel)(void))
+void ui_sur_camera(void (*rappel)(void))
 {
-    rappel_toucher = rappel;
+    rappel_camera = rappel;
+}
+
+static void sur_toucher_ecran(lv_event_t *e)
+{
+    (void)e;
+    if (alerte && courrier.nb_detail > 0) {
+        ui_ouvrir_courrier();    /* pendant l'alerte, on veut savoir ce qui l'a déclenchée */
+    } else {
+        ui_ouvrir_reglages();
+    }
 }
 
 /* --- Courrier : enveloppe en haut, dernier mail en bas ------------------------------- */
@@ -291,7 +305,7 @@ static void creer_apercu(lv_obj_t *ecran)
     lv_obj_set_style_bg_opa(apercu, LV_OPA_COVER, 0);
     lv_obj_remove_flag(apercu, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(apercu, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_event_cb(apercu, sur_clic, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(apercu, sur_camera, LV_EVENT_CLICKED, NULL);
 
     /* Un canevas plutôt qu'une image : changer de tampon vide aussi le cache de LVGL. */
     apercu_img = lv_canvas_create(apercu);
@@ -433,8 +447,7 @@ void ui_init(void)
     creer_fiche_courrier(ecran);
 
     lv_obj_add_flag(ecran, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_add_event_cb(ecran, sur_appui_long, LV_EVENT_SHORT_CLICKED, NULL); /* bref : volume */
-    lv_obj_add_event_cb(ecran, sur_clic, LV_EVENT_LONG_PRESSED, NULL);        /* long : caméra */
+    lv_obj_add_event_cb(ecran, sur_toucher_ecran, LV_EVENT_CLICKED, NULL);
 
     mention_son = creer_label(ecran, &vigie_petit_24, C_DISCRET);
     lv_label_set_text(mention_son, "son coupé");
@@ -442,6 +455,7 @@ void ui_init(void)
     lv_obj_add_flag(mention_son, LV_OBJ_FLAG_HIDDEN);
 
     creer_reglage_volume(ecran);
+    creer_reglages(ecran);
 
     memset(&dernier_etat, 0, sizeof(dernier_etat));
     dernier_etat.humeur = VIGIE_CALME;
@@ -598,7 +612,7 @@ void ui_afficher_courrier(const vigie_courrier_t *c, bool nouveau)
 
 /* --- Réglage du volume ----------------------------------------------------------
  *
- * Un toucher bref ouvre un voile sombre avec un grand arc à faire glisser du doigt,
+ * La ligne « Son » des réglages ouvre un voile sombre avec un grand arc à faire glisser du doigt,
  * la valeur au centre et un bouton pour couper le son. Il se referme tout seul
  * après quelques secondes sans geste, ou d'un toucher hors de l'arc.
  */
@@ -622,6 +636,7 @@ static void maj_reglage(void)
     } else {
         lv_obj_add_flag(mention_son, LV_OBJ_FLAG_HIDDEN);
     }
+    maj_page_reglages();
 }
 
 static void fermer_reglage(void)
@@ -673,16 +688,6 @@ static void sur_voile(lv_event_t *e)
     /* seul un toucher sur le voile lui-même ferme (pas sur l'arc ni le bouton) */
     if (lv_event_get_target(e) == voile) {
         fermer_reglage();
-    }
-}
-
-static void sur_appui_long(lv_event_t *e)
-{
-    (void)e;
-    if (alerte && courrier.nb_detail > 0) {
-        ui_ouvrir_courrier();    /* pendant l'alerte, on veut savoir ce qui l'a déclenchée */
-    } else {
-        ui_ouvrir_volume();
     }
 }
 
@@ -974,4 +979,656 @@ void ui_ouvrir_courrier(void)
     lv_obj_move_to_index(fiche, -1);
     lv_timer_reset(minuterie_fiche);
     lv_timer_resume(minuterie_fiche);
+}
+
+/* --- Réglages : Son, Wi-Fi, Caméra --------------------------------------------------
+ *
+ * Trois pages rondes, posées sur l'écran principal :
+ *   réglages     : trois lignes à toucher (Son, Wi-Fi, Caméra)
+ *   Wi-Fi        : l'état de la connexion et les réseaux à portée
+ *   mot de passe : un champ et un clavier AZERTY
+ * Tout se referme seul après un moment sans geste.
+ */
+
+#define REGLAGES_MS     15000
+#define PAGE_WIFI_MS    60000
+#define PAGE_MDP_MS     120000
+
+static lv_obj_t *page_reglages, *page_wifi, *page_mdp;
+static lv_obj_t *val_son, *val_wifi;
+static lv_obj_t *wifi_statut, *wifi_liste, *wifi_info;
+static lv_obj_t *mdp_reseau, *mdp_champ, *mdp_voir, *clavier;
+static lv_timer_t *veille_reglages;
+
+static void (*rappel_chercher)(void) = NULL;
+static void (*rappel_choisir)(const char *ssid, const char *mdp) = NULL;
+
+static ui_reseau_t reseaux_vus[UI_RESEAUX_MAX];
+static int nb_reseaux_vus = 0;
+static char wifi_ssid[33];           /* réseau en service (ou cherché) */
+static char ssid_choisi[33];         /* réseau qu'on essaie, ou dont on tape le mot de passe */
+static bool wifi_connecte = false;
+static bool essai_en_cours = false;
+static bool echec_affiche = false;   /* garde le message d'échec jusqu'au prochain essai */
+static bool recherche_en_cours = false;
+
+static bool page_visible(lv_obj_t *p)
+{
+    return p && !lv_obj_has_flag(p, LV_OBJ_FLAG_HIDDEN);
+}
+
+static lv_obj_t *creer_page(lv_obj_t *ecran)
+{
+    lv_obj_t *p = lv_obj_create(ecran);
+    lv_obj_remove_style_all(p);
+    lv_obj_set_size(p, TAILLE, TAILLE);
+    lv_obj_center(p);
+    lv_obj_set_style_radius(p, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(p, C_FOND, 0);
+    lv_obj_set_style_bg_opa(p, LV_OPA_COVER, 0);
+    lv_obj_add_flag(p, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(p, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(p, LV_OBJ_FLAG_HIDDEN);
+    return p;
+}
+
+static void creer_titre_page(lv_obj_t *page, const char *texte, int32_t y)
+{
+    lv_obj_t *t = creer_label(page, &vigie_titre_28, C_DISCRET);
+    lv_obj_set_style_text_letter_space(t, 6, 0);
+    lv_label_set_text(t, texte);
+    lv_obj_align(t, LV_ALIGN_TOP_MID, 0, y);
+}
+
+/* Bouton en pilule ; `principal` : plein, en bleu. */
+static lv_obj_t *creer_bouton(lv_obj_t *parent, const char *texte, bool principal, lv_event_cb_t cb)
+{
+    lv_obj_t *b = lv_obj_create(parent);
+    lv_obj_remove_style_all(b);
+    lv_obj_set_size(b, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_style_pad_hor(b, 28, 0);
+    lv_obj_set_style_pad_ver(b, 14, 0);
+    lv_obj_set_style_radius(b, LV_RADIUS_CIRCLE, 0);
+    if (principal) {
+        lv_obj_set_style_bg_color(b, C_BLEU, 0);
+        lv_obj_set_style_bg_opa(b, LV_OPA_COVER, 0);
+        lv_obj_set_style_bg_opa(b, LV_OPA_70, LV_STATE_PRESSED);
+    } else {
+        lv_obj_set_style_border_width(b, 2, 0);
+        lv_obj_set_style_border_color(b, C_DISCRET, 0);
+        lv_obj_set_style_bg_color(b, C_CARTE, LV_STATE_PRESSED);
+        lv_obj_set_style_bg_opa(b, LV_OPA_COVER, LV_STATE_PRESSED);
+    }
+    lv_obj_add_flag(b, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(b, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_ext_click_area(b, 10);
+    lv_obj_add_event_cb(b, cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *l = creer_label(b, &vigie_petit_24, principal ? C_FOND : C_TEXTE);
+    lv_label_set_text(l, texte);
+    return b;
+}
+
+static lv_obj_t *creer_rangee(lv_obj_t *parent)
+{
+    lv_obj_t *r = lv_obj_create(parent);
+    lv_obj_remove_style_all(r);
+    lv_obj_remove_flag(r, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(r, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(r, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(r, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(r, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(r, 20, 0);
+    return r;
+}
+
+static void cacher_pages(void)
+{
+    lv_obj_add_flag(page_reglages, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(page_wifi, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(page_mdp, LV_OBJ_FLAG_HIDDEN);
+}
+
+static void fermer_reglages(void)
+{
+    cacher_pages();
+    lv_textarea_set_text(mdp_champ, "");    /* le mot de passe ne traîne pas en mémoire */
+    lv_timer_pause(veille_reglages);
+}
+
+static void montrer_page(lv_obj_t *p)
+{
+    cacher_pages();
+    lv_obj_remove_flag(p, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_to_index(p, -1);
+    lv_timer_reset(veille_reglages);
+    lv_timer_resume(veille_reglages);
+}
+
+/* Chaque seconde : referme les réglages si personne n'a touché l'écran depuis un moment. */
+static void sur_veille_reglages(lv_timer_t *t)
+{
+    (void)t;
+    uint32_t limite = page_visible(page_mdp) ? PAGE_MDP_MS
+                    : page_visible(page_wifi) ? PAGE_WIFI_MS : REGLAGES_MS;
+    if (lv_display_get_inactive_time(NULL) > limite) {
+        fermer_reglages();
+    }
+}
+
+/* --- Page des réglages --------------------------------------------------------------- */
+
+static void maj_page_reglages(void)
+{
+    if (!val_son) {
+        return;    /* pas encore créée */
+    }
+    if (volume_actuel == 0) {
+        lv_label_set_text(val_son, "coupé");
+    } else {
+        lv_label_set_text_fmt(val_son, "%d %%", volume_actuel);
+    }
+    lv_label_set_text(val_wifi, wifi_connecte && wifi_ssid[0] ? wifi_ssid : "pas connecté");
+    lv_obj_set_style_text_color(val_wifi, wifi_connecte ? C_VERT : C_AMBRE, 0);
+}
+
+static void ouvrir_page_wifi(void);
+
+static void sur_page_reglages(lv_event_t *e)
+{
+    if (lv_event_get_target(e) == page_reglages) {
+        fermer_reglages();    /* toucher dans le vide */
+    }
+}
+
+static void sur_ligne_son(lv_event_t *e)
+{
+    (void)e;
+    fermer_reglages();
+    ui_ouvrir_volume();
+}
+
+static void sur_ligne_wifi(lv_event_t *e)
+{
+    (void)e;
+    echec_affiche = false;
+    ouvrir_page_wifi();
+}
+
+static void sur_ligne_camera(lv_event_t *e)
+{
+    (void)e;
+    fermer_reglages();
+    if (rappel_camera) {
+        rappel_camera();
+    }
+}
+
+/* Une ligne « Nom ........ valeur » ; renvoie le label de la valeur. */
+static lv_obj_t *creer_ligne_reglage(lv_obj_t *parent, const char *nom, lv_event_cb_t cb)
+{
+    lv_obj_t *l = lv_obj_create(parent);
+    lv_obj_remove_style_all(l);
+    lv_obj_set_size(l, 480, 92);
+    lv_obj_set_style_radius(l, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_color(l, C_CARTE, 0);
+    lv_obj_set_style_bg_color(l, C_CARTE_APPUI, LV_STATE_PRESSED);
+    lv_obj_set_style_bg_opa(l, LV_OPA_COVER, 0);
+    lv_obj_set_style_pad_hor(l, 40, 0);
+    lv_obj_add_flag(l, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(l, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_event_cb(l, cb, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t *n = creer_label(l, &vigie_titre_28, C_TEXTE);
+    lv_label_set_text(n, nom);
+    lv_obj_align(n, LV_ALIGN_LEFT_MID, 0, 0);
+
+    lv_obj_t *v = creer_label(l, &vigie_petit_24, C_DISCRET);
+    defilant(v, 230);
+    lv_obj_set_style_text_align(v, LV_TEXT_ALIGN_RIGHT, 0);
+    lv_obj_align(v, LV_ALIGN_RIGHT_MID, 0, 0);
+    return v;
+}
+
+static void creer_page_reglages(lv_obj_t *ecran)
+{
+    page_reglages = creer_page(ecran);
+    lv_obj_add_event_cb(page_reglages, sur_page_reglages, LV_EVENT_CLICKED, NULL);
+    creer_titre_page(page_reglages, "RÉGLAGES", 150);
+
+    lv_obj_t *colonne = lv_obj_create(page_reglages);
+    lv_obj_remove_style_all(colonne);
+    lv_obj_remove_flag(colonne, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(colonne, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_size(colonne, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(colonne, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(colonne, 18, 0);
+    lv_obj_align(colonne, LV_ALIGN_CENTER, 0, 10);
+
+    val_son = creer_ligne_reglage(colonne, "Son", sur_ligne_son);
+    val_wifi = creer_ligne_reglage(colonne, "Wi-Fi", sur_ligne_wifi);
+    lv_obj_t *val_camera = creer_ligne_reglage(colonne, "Caméra", sur_ligne_camera);
+    lv_label_set_text(val_camera, "aperçu");
+
+    lv_obj_t *aide = creer_label(page_reglages, &vigie_petit_24, C_DISCRET);
+    lv_label_set_text(aide, "Toucher ailleurs pour fermer");
+    lv_obj_align(aide, LV_ALIGN_BOTTOM_MID, 0, -120);
+}
+
+void ui_ouvrir_reglages(void)
+{
+    maj_page_reglages();
+    montrer_page(page_reglages);
+}
+
+/* --- Page Wi-Fi ---------------------------------------------------------------------- */
+
+static void maj_statut_wifi(void)
+{
+    if (echec_affiche) {
+        return;
+    }
+    if (essai_en_cours) {
+        lv_label_set_text_fmt(wifi_statut, "Connexion à %s…", ssid_choisi);
+        lv_obj_set_style_text_color(wifi_statut, C_TEXTE, 0);
+    } else if (wifi_connecte) {
+        lv_label_set_text_fmt(wifi_statut, "Connecté à %s", wifi_ssid);
+        lv_obj_set_style_text_color(wifi_statut, C_VERT, 0);
+    } else if (wifi_ssid[0]) {
+        lv_label_set_text_fmt(wifi_statut, "Pas connecté. Je cherche %s…", wifi_ssid);
+        lv_obj_set_style_text_color(wifi_statut, C_AMBRE, 0);
+    } else {
+        lv_label_set_text(wifi_statut, "Aucun réseau choisi");
+        lv_obj_set_style_text_color(wifi_statut, C_AMBRE, 0);
+    }
+}
+
+static void chercher_reseaux(void)
+{
+    if (recherche_en_cours) {
+        return;
+    }
+    recherche_en_cours = true;
+    lv_obj_clean(wifi_liste);
+    lv_label_set_text(wifi_info, "Recherche des réseaux…");
+    lv_obj_remove_flag(wifi_info, LV_OBJ_FLAG_HIDDEN);
+    if (rappel_chercher) {
+        rappel_chercher();
+    } else {
+        ui_wifi_reseaux(NULL, -1);
+    }
+}
+
+static void ouvrir_page_wifi(void)
+{
+    maj_statut_wifi();
+    montrer_page(page_wifi);
+    chercher_reseaux();
+}
+
+static void ouvrir_page_mdp(const char *ssid);
+
+static void sur_reseau(lv_event_t *e)
+{
+    int i = (int)(intptr_t)lv_event_get_user_data(e);
+    if (i < 0 || i >= nb_reseaux_vus) {
+        return;
+    }
+    if (reseaux_vus[i].protege) {
+        ouvrir_page_mdp(reseaux_vus[i].ssid);
+    } else if (rappel_choisir) {
+        snprintf(ssid_choisi, sizeof(ssid_choisi), "%s", reseaux_vus[i].ssid);
+        rappel_choisir(reseaux_vus[i].ssid, "");
+    }
+}
+
+static void sur_actualiser(lv_event_t *e)
+{
+    (void)e;
+    echec_affiche = false;
+    maj_statut_wifi();
+    chercher_reseaux();
+}
+
+static void sur_retour_reglages(lv_event_t *e)
+{
+    (void)e;
+    ui_ouvrir_reglages();
+}
+
+/* Quatre barres de hauteur croissante, allumées selon la force du signal. */
+static lv_obj_t *creer_barres(lv_obj_t *parent, int force)
+{
+    lv_obj_t *b = lv_obj_create(parent);
+    lv_obj_remove_style_all(b);
+    lv_obj_remove_flag(b, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_size(b, 4 * 6 + 3 * 4, 28);
+    for (int i = 0; i < 4; i++) {
+        lv_obj_t *barre = lv_obj_create(b);
+        lv_obj_remove_style_all(barre);
+        lv_obj_remove_flag(barre, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_size(barre, 6, 7 + 7 * i);
+        lv_obj_set_style_radius(barre, 2, 0);
+        lv_obj_set_style_bg_color(barre, i < force ? C_TEXTE : C_GRIS, 0);
+        lv_obj_set_style_bg_opa(barre, LV_OPA_COVER, 0);
+        lv_obj_align(barre, LV_ALIGN_BOTTOM_LEFT, i * 10, 0);
+    }
+    return b;
+}
+
+static void creer_page_wifi(lv_obj_t *ecran)
+{
+    page_wifi = creer_page(ecran);
+    creer_titre_page(page_wifi, "WI-FI", 105);
+
+    wifi_statut = creer_label(page_wifi, &vigie_petit_24, C_TEXTE);
+    defilant(wifi_statut, 480);
+    lv_obj_align(wifi_statut, LV_ALIGN_TOP_MID, 0, 150);
+
+    wifi_liste = lv_obj_create(page_wifi);
+    lv_obj_remove_style_all(wifi_liste);
+    lv_obj_remove_flag(wifi_liste, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_size(wifi_liste, 540, 380);
+    lv_obj_align(wifi_liste, LV_ALIGN_TOP_MID, 0, 200);
+    lv_obj_set_flex_flow(wifi_liste, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(wifi_liste, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(wifi_liste, 8, 0);
+    lv_obj_set_scroll_dir(wifi_liste, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(wifi_liste, LV_SCROLLBAR_MODE_OFF);
+
+    wifi_info = creer_label(page_wifi, &vigie_petit_24, C_DISCRET);
+    lv_obj_align(wifi_info, LV_ALIGN_CENTER, 0, -10);
+
+    lv_obj_t *boutons = creer_rangee(page_wifi);
+    creer_bouton(boutons, "Retour", false, sur_retour_reglages);
+    creer_bouton(boutons, "Actualiser", false, sur_actualiser);
+    lv_obj_align(boutons, LV_ALIGN_BOTTOM_MID, 0, -112);
+}
+
+void ui_wifi_reseaux(const ui_reseau_t *reseaux, int nb)
+{
+    recherche_en_cours = false;
+    lv_obj_clean(wifi_liste);
+    nb_reseaux_vus = nb < 0 ? 0 : nb > UI_RESEAUX_MAX ? UI_RESEAUX_MAX : nb;
+    if (nb_reseaux_vus > 0) {
+        memcpy(reseaux_vus, reseaux, sizeof(ui_reseau_t) * nb_reseaux_vus);
+    }
+    if (nb_reseaux_vus == 0) {
+        lv_label_set_text(wifi_info, nb < 0 ? "Recherche impossible. Réessaie." : "Aucun réseau trouvé.");
+        lv_obj_remove_flag(wifi_info, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+    lv_obj_add_flag(wifi_info, LV_OBJ_FLAG_HIDDEN);
+
+    for (int i = 0; i < nb_reseaux_vus; i++) {
+        const ui_reseau_t *r = &reseaux_vus[i];
+        bool actuel = wifi_connecte && !strcmp(r->ssid, wifi_ssid);
+
+        lv_obj_t *ligne = lv_obj_create(wifi_liste);
+        lv_obj_remove_style_all(ligne);
+        lv_obj_set_size(ligne, 520, 64);
+        lv_obj_set_style_radius(ligne, 18, 0);
+        lv_obj_set_style_bg_color(ligne, C_CARTE, 0);
+        lv_obj_set_style_bg_color(ligne, C_CARTE_APPUI, LV_STATE_PRESSED);
+        lv_obj_set_style_bg_opa(ligne, LV_OPA_COVER, 0);
+        lv_obj_set_style_pad_hor(ligne, 24, 0);
+        lv_obj_add_flag(ligne, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_remove_flag(ligne, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_add_event_cb(ligne, sur_reseau, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+
+        lv_obj_t *nom = creer_label(ligne, &vigie_petit_24, actuel ? C_VERT : C_TEXTE);
+        defilant(nom, r->protege ? 380 : 290);
+        lv_obj_set_style_text_align(nom, LV_TEXT_ALIGN_LEFT, 0);
+        lv_label_set_text(nom, r->ssid);
+        lv_obj_align(nom, LV_ALIGN_LEFT_MID, 0, 0);
+
+        if (!r->protege) {
+            lv_obj_t *libre = creer_label(ligne, &vigie_petit_24, C_DISCRET);
+            lv_label_set_text(libre, "ouvert");
+            lv_obj_align(libre, LV_ALIGN_RIGHT_MID, -50, 0);
+        }
+        lv_obj_align(creer_barres(ligne, r->force), LV_ALIGN_RIGHT_MID, 0, 0);
+    }
+}
+
+void ui_wifi_etat(ui_wifi_t etat, const char *ssid, const char *detail)
+{
+    switch (etat) {
+    case UI_WIFI_ABSENT:
+        wifi_connecte = false;
+        snprintf(wifi_ssid, sizeof(wifi_ssid), "%s", ssid ? ssid : "");
+        break;
+    case UI_WIFI_CONNECTE:
+        wifi_connecte = true;
+        snprintf(wifi_ssid, sizeof(wifi_ssid), "%s", ssid ? ssid : "");
+        if (essai_en_cours && !strcmp(wifi_ssid, ssid_choisi)) {
+            essai_en_cours = false;
+        }
+        break;
+    case UI_WIFI_ESSAI:
+        essai_en_cours = true;
+        echec_affiche = false;
+        snprintf(ssid_choisi, sizeof(ssid_choisi), "%s", ssid ? ssid : "");
+        break;
+    case UI_WIFI_ECHEC:
+        essai_en_cours = false;
+        echec_affiche = true;
+        lv_label_set_text_fmt(wifi_statut, "%s %s n'est pas enregistré.",
+                              detail ? detail : "Échec.", ssid ? ssid : "");
+        lv_obj_set_style_text_color(wifi_statut, C_AMBRE, 0);
+        break;
+    }
+    maj_statut_wifi();
+    maj_page_reglages();
+}
+
+void ui_sur_wifi(void (*chercher)(void), void (*choisir)(const char *ssid, const char *mdp))
+{
+    rappel_chercher = chercher;
+    rappel_choisir = choisir;
+}
+
+/* --- Page du mot de passe : champ et clavier AZERTY ------------------------------------
+ *
+ * Un clavier maison (matrice de boutons) plutôt que lv_keyboard : ses touches spéciales
+ * sont des symboles absents des polices de la Vigie.
+ */
+
+#define L(n) LV_BUTTONMATRIX_CTRL_WIDTH_##n
+#define MODE (LV_BUTTONMATRIX_CTRL_NO_REPEAT | LV_BUTTONMATRIX_CTRL_CLICK_TRIG)
+
+static const char *const carte_min[] = {
+    "a", "z", "e", "r", "t", "y", "u", "i", "o", "p", "\n",
+    "q", "s", "d", "f", "g", "h", "j", "k", "l", "m", "\n",
+    "Maj", "w", "x", "c", "v", "b", "n", "Effacer", "\n",
+    "123", "espace", ".", "-", "_", ""};
+static const char *const carte_maj[] = {
+    "A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P", "\n",
+    "Q", "S", "D", "F", "G", "H", "J", "K", "L", "M", "\n",
+    "Maj", "W", "X", "C", "V", "B", "N", "Effacer", "\n",
+    "123", "espace", ".", "-", "_", ""};
+static const lv_buttonmatrix_ctrl_t ctrl_min[] = {
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(3) | MODE, L(2), L(2), L(2), L(2), L(2), L(2), L(3),
+    L(3) | MODE, L(8), L(2), L(2), L(2)};
+static const lv_buttonmatrix_ctrl_t ctrl_maj[] = {
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(3) | MODE | LV_BUTTONMATRIX_CTRL_CHECKED, L(2), L(2), L(2), L(2), L(2), L(2), L(3),
+    L(3) | MODE, L(8), L(2), L(2), L(2)};
+
+static const char *const carte_chiffres[] = {
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "\n",
+    "-", "/", ":", ";", "(", ")", "&", "@", "\"", "'", "\n",
+    "#+=", ".", ",", "?", "!", "Effacer", "\n",
+    "abc", "espace", ".", "-", "_", ""};
+static const char *const carte_symboles[] = {
+    "[", "]", "{", "}", "#", "%", "^", "*", "+", "=", "\n",
+    "_", "\\", "|", "~", "<", ">", "$", "`", "\n",
+    "123", ".", ",", "?", "!", "Effacer", "\n",
+    "abc", "espace", ".", "-", "_", ""};
+static const lv_buttonmatrix_ctrl_t ctrl_chiffres[] = {
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(3) | MODE, L(2), L(2), L(2), L(2), L(3),
+    L(3) | MODE, L(8), L(2), L(2), L(2)};
+static const lv_buttonmatrix_ctrl_t ctrl_symboles[] = {
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(1), L(1), L(1), L(1), L(1), L(1), L(1), L(1),
+    L(3) | MODE, L(2), L(2), L(2), L(2), L(3),
+    L(3) | MODE, L(8), L(2), L(2), L(2)};
+
+#undef L
+#undef MODE
+
+static void choisir_carte(const char *const *carte, const lv_buttonmatrix_ctrl_t *ctrl)
+{
+    lv_buttonmatrix_set_map(clavier, carte);
+    lv_buttonmatrix_set_ctrl_map(clavier, ctrl);
+}
+
+static void aide_mdp(const char *texte, lv_color_t couleur)
+{
+    lv_label_set_text(mdp_reseau, texte);
+    lv_obj_set_style_text_color(mdp_reseau, couleur, 0);
+}
+
+static void sur_touche(lv_event_t *e)
+{
+    (void)e;
+    uint32_t id = lv_buttonmatrix_get_selected_button(clavier);
+    if (id == LV_BUTTONMATRIX_BUTTON_NONE) {
+        return;
+    }
+    const char *t = lv_buttonmatrix_get_button_text(clavier, id);
+    if (!t) {
+        return;
+    }
+    if (!strcmp(t, "Maj")) {
+        bool maj = lv_buttonmatrix_has_button_ctrl(clavier, id, LV_BUTTONMATRIX_CTRL_CHECKED);
+        choisir_carte(maj ? carte_min : carte_maj, maj ? ctrl_min : ctrl_maj);
+    } else if (!strcmp(t, "123")) {
+        choisir_carte(carte_chiffres, ctrl_chiffres);
+    } else if (!strcmp(t, "#+=")) {
+        choisir_carte(carte_symboles, ctrl_symboles);
+    } else if (!strcmp(t, "abc")) {
+        choisir_carte(carte_min, ctrl_min);
+    } else if (!strcmp(t, "Effacer")) {
+        lv_textarea_delete_char(mdp_champ);
+    } else if (!strcmp(t, "espace")) {
+        lv_textarea_add_text(mdp_champ, " ");
+    } else {
+        lv_textarea_add_text(mdp_champ, t);
+    }
+    aide_mdp(ssid_choisi, C_DISCRET);
+}
+
+static void sur_voir(lv_event_t *e)
+{
+    (void)e;
+    bool cache = lv_textarea_get_password_mode(mdp_champ);
+    lv_textarea_set_password_mode(mdp_champ, !cache);
+    lv_label_set_text(lv_obj_get_child(mdp_voir, 0), cache ? "Cacher" : "Voir");
+}
+
+static void sur_annuler_mdp(lv_event_t *e)
+{
+    (void)e;
+    lv_textarea_set_text(mdp_champ, "");
+    montrer_page(page_wifi);
+}
+
+static void sur_connecter(lv_event_t *e)
+{
+    (void)e;
+    const char *mdp = lv_textarea_get_text(mdp_champ);
+    if (strlen(mdp) < 8) {
+        aide_mdp("Il faut au moins 8 caractères.", C_AMBRE);
+        return;
+    }
+    if (rappel_choisir) {
+        rappel_choisir(ssid_choisi, mdp);
+    }
+    lv_textarea_set_text(mdp_champ, "");
+    montrer_page(page_wifi);
+}
+
+static void ouvrir_page_mdp(const char *ssid)
+{
+    snprintf(ssid_choisi, sizeof(ssid_choisi), "%s", ssid);
+    aide_mdp(ssid_choisi, C_DISCRET);
+    lv_textarea_set_text(mdp_champ, "");
+    lv_textarea_set_password_mode(mdp_champ, true);
+    lv_label_set_text(lv_obj_get_child(mdp_voir, 0), "Voir");
+    choisir_carte(carte_min, ctrl_min);
+    montrer_page(page_mdp);
+}
+
+static void creer_page_mdp(lv_obj_t *ecran)
+{
+    page_mdp = creer_page(ecran);
+    creer_titre_page(page_mdp, "MOT DE PASSE", 105);
+
+    mdp_reseau = creer_label(page_mdp, &vigie_petit_24, C_DISCRET);
+    defilant(mdp_reseau, 460);
+    lv_obj_align(mdp_reseau, LV_ALIGN_TOP_MID, 0, 148);
+
+    lv_obj_t *rangee = creer_rangee(page_mdp);
+    lv_obj_set_style_pad_column(rangee, 12, 0);
+    lv_obj_align(rangee, LV_ALIGN_TOP_MID, 0, 192);
+
+    mdp_champ = lv_textarea_create(rangee);
+    lv_obj_set_size(mdp_champ, 400, 60);
+    lv_textarea_set_one_line(mdp_champ, true);
+    lv_textarea_set_max_length(mdp_champ, 63);
+    lv_textarea_set_password_bullet(mdp_champ, "•");
+    lv_textarea_set_password_mode(mdp_champ, true);
+    lv_obj_set_style_text_font(mdp_champ, &vigie_petit_24, 0);
+    lv_obj_set_style_text_color(mdp_champ, C_TEXTE, 0);
+    lv_obj_set_style_bg_color(mdp_champ, C_CARTE, 0);
+    lv_obj_set_style_bg_opa(mdp_champ, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(mdp_champ, 2, 0);
+    lv_obj_set_style_border_color(mdp_champ, C_BLEU, 0);
+    lv_obj_set_style_radius(mdp_champ, 16, 0);
+    lv_obj_set_style_pad_hor(mdp_champ, 18, 0);
+    lv_obj_set_style_pad_ver(mdp_champ, 14, 0);
+    lv_obj_set_style_border_color(mdp_champ, C_BLEU, LV_PART_CURSOR);
+    lv_obj_add_state(mdp_champ, LV_STATE_FOCUSED);    /* curseur visible sans clavier physique */
+
+    mdp_voir = creer_bouton(rangee, "Voir", false, sur_voir);
+
+    clavier = lv_buttonmatrix_create(page_mdp);
+    lv_obj_set_size(clavier, 600, 250);
+    lv_obj_align(clavier, LV_ALIGN_TOP_MID, 0, 272);
+    lv_obj_set_style_bg_opa(clavier, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(clavier, 0, 0);
+    lv_obj_set_style_pad_all(clavier, 0, 0);
+    lv_obj_set_style_pad_row(clavier, 8, 0);
+    lv_obj_set_style_pad_column(clavier, 6, 0);
+    lv_obj_set_style_bg_color(clavier, C_CARTE, LV_PART_ITEMS);
+    lv_obj_set_style_bg_opa(clavier, LV_OPA_COVER, LV_PART_ITEMS);
+    lv_obj_set_style_bg_color(clavier, C_BLEU, LV_PART_ITEMS | LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(clavier, C_BLEU, LV_PART_ITEMS | LV_STATE_CHECKED);
+    lv_obj_set_style_border_width(clavier, 0, LV_PART_ITEMS);
+    lv_obj_set_style_shadow_width(clavier, 0, LV_PART_ITEMS);
+    lv_obj_set_style_radius(clavier, 12, LV_PART_ITEMS);
+    lv_obj_set_style_text_font(clavier, &vigie_petit_24, LV_PART_ITEMS);
+    lv_obj_set_style_text_color(clavier, C_TEXTE, LV_PART_ITEMS);
+    lv_obj_add_event_cb(clavier, sur_touche, LV_EVENT_VALUE_CHANGED, NULL);
+    choisir_carte(carte_min, ctrl_min);
+
+    lv_obj_t *boutons = creer_rangee(page_mdp);
+    creer_bouton(boutons, "Annuler", false, sur_annuler_mdp);
+    creer_bouton(boutons, "Se connecter", true, sur_connecter);
+    lv_obj_align(boutons, LV_ALIGN_BOTTOM_MID, 0, -176);
+}
+
+static void creer_reglages(lv_obj_t *ecran)
+{
+    creer_page_reglages(ecran);
+    creer_page_wifi(ecran);
+    creer_page_mdp(ecran);
+    veille_reglages = lv_timer_create(sur_veille_reglages, 1000, NULL);
+    lv_timer_pause(veille_reglages);
+    maj_page_reglages();
 }

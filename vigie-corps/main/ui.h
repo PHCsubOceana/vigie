@@ -81,15 +81,46 @@ void ui_ouvrir_courrier(void);
  * et le rappel reçoit son id (à transmettre au Jetson). Verrou LVGL déjà pris. */
 void ui_sur_mail_vu(void (*rappel)(const char *id));
 
-/* Appui long sur l'écran (n'importe où) appelle ce rappel, verrou LVGL déjà pris. */
-void ui_sur_toucher(void (*rappel)(void));
+/* Réglages : un toucher sur l'écran (hors enveloppe et hors alerte courrier) ouvre une
+ * fenêtre avec trois lignes : Son, Wi-Fi, Caméra. Elle se ferme d'un toucher dans le vide
+ * ou seule après un moment sans geste. */
+void ui_ouvrir_reglages(void);
 
-/* Volume : un toucher bref sur l'écran ouvre le réglage (grand arc + « Couper le son »).
+/* Ligne « Caméra » des réglages, ou toucher sur l'aperçu : ouvre ou ferme l'aperçu.
+ * Rappel appelé avec le verrou LVGL déjà pris. */
+void ui_sur_camera(void (*rappel)(void));
+
+/* Volume : la ligne « Son » ouvre le réglage (grand arc + « Couper le son »).
  * Le rappel reçoit le volume 0..100 ; final = vrai au relâchement. */
 typedef void (*ui_volume_cb_t)(int volume, bool final);
 void ui_sur_volume(ui_volume_cb_t rappel);
 void ui_afficher_volume(int volume);   /* 0 = son coupé */
 void ui_ouvrir_volume(void);
+
+/* Wi-Fi : la ligne « Wi-Fi » montre les réseaux à portée. Toucher un réseau demande son
+ * mot de passe (clavier à l'écran), puis l'essaie. */
+#define UI_RESEAUX_MAX 12
+
+typedef struct {
+    char ssid[33];
+    int force;            /* 1 (faible) à 4 (fort) */
+    bool protege;         /* mot de passe demandé */
+} ui_reseau_t;
+
+typedef enum {
+    UI_WIFI_ABSENT,       /* pas de réseau, la carte cherche à se connecter */
+    UI_WIFI_CONNECTE,
+    UI_WIFI_ESSAI,        /* essai d'un réseau choisi sur l'écran */
+    UI_WIFI_ECHEC,        /* l'essai a raté : retour au réseau d'avant */
+} ui_wifi_t;
+
+/* `chercher` lance une recherche des réseaux, `choisir` l'essai d'un réseau (mdp vide :
+ * réseau ouvert). Les deux sont appelés avec le verrou LVGL pris et ne doivent pas bloquer. */
+void ui_sur_wifi(void (*chercher)(void), void (*choisir)(const char *ssid, const char *mdp));
+/* `detail` : la raison d'un échec (« Mot de passe refusé. »), sinon NULL. */
+void ui_wifi_etat(ui_wifi_t etat, const char *ssid, const char *detail);
+/* Résultat d'une recherche, du plus fort au plus faible ; nb < 0 : recherche ratée. */
+void ui_wifi_reseaux(const ui_reseau_t *reseaux, int nb);
 
 /* Aperçu caméra. `message` non NULL : texte à la place de l'image (caméra absente…). */
 void ui_camera_afficher(bool visible, const char *message);

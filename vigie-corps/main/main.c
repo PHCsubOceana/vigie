@@ -1,11 +1,12 @@
 /*
  * Vigie — corps (ESP32-P4-WIFI6-Touch-LCD-3.4C).
  *
- * Se connecte au Wi-Fi par la puce C6, s'abonne aux messages du Jetson
+ * Se connecte au Wi-Fi par la puce C6 (wifi.c), s'abonne aux messages du Jetson
  * (vigie/etat, vigie/cerveau, vigie/courrier, vigie/commande) et les affiche
  * sur l'écran rond. Regarde aussi devant lui avec la caméra (camera.c).
  * Joue un petit son (son.c) quand un agent t'attend, termine, ou qu'un mail important
- * arrive. Volume : toucher bref sur l'écran, ou MQTT vigie/corps/volume (0..100), gardé en NVS.
+ * arrive. Un toucher sur l'écran ouvre les réglages : son, Wi-Fi, caméra.
+ * Volume : réglages, ou MQTT vigie/corps/volume (0..100), gardé en NVS.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -13,11 +14,10 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_event.h"
-#include "esp_netif.h"
-#include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "esp_timer.h"
+#include "esp_heap_caps.h"
 #include "mqtt_client.h"
 #include "cJSON.h"
 #include "bsp/esp-bsp.h"
@@ -25,6 +25,7 @@
 #include "camera.h"
 #include "vigie.h"
 #include "son.h"
+#include "wifi.h"
 
 static const char *TAG = "vigie";
 
@@ -313,7 +314,7 @@ static void traiter_courrier(const char *json, int len, bool retenu)
     bsp_display_unlock();
 }
 
-/* --- Caméra : toucher l'écran ouvre ou ferme l'aperçu ------------------------------------ */
+/* --- Caméra : la ligne « Caméra » des réglages ouvre l'aperçu, un toucher le ferme -------- */
 
 static bool apercu_sans_camera = false;
 
@@ -347,7 +348,8 @@ static void traiter_commande(const char *cmd)
 /* --- MQTT ------------------------------------------------------------------------------ */
 
 #define TAILLE_MSG 8192
-static char message[TAILLE_MSG + 1];
+/* En PSRAM (demarrer_mqtt) : la RAM interne manque au démarrage du système. */
+static char *message;
 static char sujet[64];
 static bool message_retenu;
 
@@ -426,6 +428,11 @@ static void sur_mqtt(void *arg, esp_event_base_t base, int32_t id, void *donnees
 static void demarrer_mqtt(void)
 {
     if (mqtt) return;  /* le client se reconnecte de lui-même ensuite */
+    message = heap_caps_malloc(TAILLE_MSG + 1, MALLOC_CAP_SPIRAM);
+    if (!message) {
+        ESP_LOGE(TAG, "Pas de mémoire pour les messages MQTT");
+        return;
+    }
     const esp_mqtt_client_config_t cfg = {
         .broker.address.uri = CONFIG_VIGIE_MQTT_URI,
         .credentials.username = CONFIG_VIGIE_MQTT_USER,
@@ -440,48 +447,32 @@ static void demarrer_mqtt(void)
     esp_mqtt_client_start(mqtt);
 }
 
-/* --- Wi-Fi (via la puce ESP32-C6) ------------------------------------------------------------- */
+/* --- Wi-Fi (wifi.c) : rappels appelés hors du verrou d'affichage ---------------------------- */
 
-static void sur_wifi(void *arg, esp_event_base_t base, int32_t id, void *donnees)
+static void sur_connexion_wifi(bool connecte, const char *ssid)
 {
-    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
-        if (wifi_ok) {
-            ESP_LOGW(TAG, "Wi-Fi perdu, nouvelle tentative");
-            wifi_ok = false;
-            maj_liaison();
-        }
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        esp_wifi_connect();
-    } else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t *ip = donnees;
-        ESP_LOGI(TAG, "Adresse IP : " IPSTR, IP2STR(&ip->ip_info.ip));
-        wifi_ok = true;
-        maj_liaison();
+    wifi_ok = connecte;
+    bsp_display_lock((uint32_t)-1);
+    ui_wifi_etat(connecte ? UI_WIFI_CONNECTE : UI_WIFI_ABSENT, ssid, NULL);
+    bsp_display_unlock();
+    maj_liaison();
+    if (connecte) {
         demarrer_mqtt();
     }
 }
 
-static void demarrer_wifi(void)
+static void sur_reseaux_wifi(const ui_reseau_t *reseaux, int nb)
 {
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_sta();
+    bsp_display_lock((uint32_t)-1);
+    ui_wifi_reseaux(reseaux, nb);
+    bsp_display_unlock();
+}
 
-    wifi_init_config_t init = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&init));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, sur_wifi, NULL, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, sur_wifi, NULL, NULL));
-
-    wifi_config_t cfg = {0};
-    copier_utf8((char *)cfg.sta.ssid, sizeof(cfg.sta.ssid), CONFIG_VIGIE_WIFI_SSID);
-    copier_utf8((char *)cfg.sta.password, sizeof(cfg.sta.password), CONFIG_VIGIE_WIFI_PASSWORD);
-    cfg.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &cfg));
-    ESP_ERROR_CHECK(esp_wifi_start());
+static void sur_essai_wifi(ui_wifi_t etat, const char *ssid, const char *detail)
+{
+    bsp_display_lock((uint32_t)-1);
+    ui_wifi_etat(etat, ssid, detail);
+    bsp_display_unlock();
 }
 
 /* --- Démarrage ------------------------------------------------------------------------- */
@@ -500,8 +491,9 @@ void app_main(void)
     bsp_display_start();
     bsp_display_lock((uint32_t)-1);
     ui_init();
-    ui_sur_toucher(basculer_apercu);
+    ui_sur_camera(basculer_apercu);
     ui_sur_volume(sur_volume_ecran);
+    ui_sur_wifi(wifi_chercher, wifi_choisir);
     ui_sur_mail_vu(sur_mail_vu);
     ui_afficher_volume(volume);
     bsp_display_unlock();
@@ -510,7 +502,12 @@ void app_main(void)
     son_init(volume);
     xTaskCreate(tache_rappel, "rappel", 2048, NULL, 2, NULL);
 
-    demarrer_wifi();
+    const wifi_rappels_t rappels_wifi = {
+        .connexion = sur_connexion_wifi,
+        .reseaux = sur_reseaux_wifi,
+        .essai = sur_essai_wifi,
+    };
+    wifi_demarrer(&rappels_wifi);
 
     /* Après le Wi-Fi : une caméra absente ou mal branchée ne doit rien bloquer. */
     camera_demarrer();

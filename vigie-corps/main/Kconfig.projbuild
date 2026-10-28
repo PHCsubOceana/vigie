@@ -5,6 +5,8 @@ menu "Vigie"
         default ""
         help
             Nom du réseau Wi-Fi de la maison. La carte ne capte que le 2,4 GHz.
+            Sert au premier démarrage : un réseau choisi ensuite sur l'écran
+            (Réglages, Wi-Fi) le remplace et reste en mémoire.
 
     config VIGIE_WIFI_PASSWORD
         string "Mot de passe Wi-Fi"
@@ -29,7 +31,7 @@ menu "Vigie"
         range 0 100
         default 60
         help
-            Ensuite, le volume se règle sur l'écran (toucher bref) et reste en mémoire.
+            Ensuite, le volume se règle sur l'écran (Réglages, Son) et reste en mémoire.
 
     menu "Caméra"
 
