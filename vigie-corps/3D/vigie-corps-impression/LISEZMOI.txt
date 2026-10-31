@@ -1,0 +1,31 @@
+VIGIE : corps imprimable (Prusa MK4S + MMU3)
+
+Ouvrir chaque .3mf dans PrusaSlicer : la pièce est déjà posée dans le bon sens,
+les volumes sont affectés à l'extrudeur 1 (bleu nuit) et 2 (orange).
+Aucun support à activer.
+Version du 29/10 : toutes les pièces sont dans le bon sens (avant, elles sortaient en miroir),
+sauf la tête, gardée volontairement dans son sens précédent.
+29/10 (2) : vis de la caméra corrigées dans le corps : la paire du bas est dans l'axe de l'objectif,
+la paire du haut 12,5 mm au-dessus. Fenêtre de l'objectif inchangée.
+30/10 : socle, logement de la prise USB approfondi à 7 mm (la flasque moulée du câble fait 5 à 6 mm).
+31/10 : tête et capot de tête, entraxe des yeux corrigé à 30,65 mm (mesuré sur le module, au lieu de 28,6). Réimprimer 02 et 05.
+31/10 (2) : capot de tête, les colonnes deviennent des fourreaux autour des ergots (Ø3,5, 44,3 mm bord à bord).
+Pastille de mousse au fond de chaque fourreau, à couper selon la longueur de l'ergot.
+31/10 (3) : tête et capot de tête, troisième vis de capot en haut de la tête (même vis que les deux bossages du bas).
+31/10 (4) : capot de tête, cinq ouïes groupées au centre, aucune sous les ergots.
+Couche 0,2 mm, remplissage 15 %, 3 périmètres.
+
+01_corps, 02_tete    : face avant sur le plateau, incrustations orange sur 0,6 mm
+                       (le corps porte aussi la capsule caméra et sa branche)
+03_socle             : logotype en relief ("360" orange) sur la dernière couche
+04 à 07              : une seule couleur, à plat (05 = capot de tête avec ses deux colonnes, 06 = capot caméra)
+08_grille_capot      : grille « play » orange, collerette sur le plateau (orange, extrudeur 2)
+
+Dossier stl/ : les mêmes pièces séparées par couleur, si besoin
+(PrusaSlicer : charger le bleu, puis clic droit > Ajouter une pièce > l'orange).
+
+Dossier source/ : le modèle paramétrique (Python, manifold3d).
+Cotes à vérifier : T_OEIL (épaisseur du module DualEye, 6 mm estimé),
+CAM_H et CAM_TROUS (caméra OV5647 au format Raspberry Pi v1.3 : 25 x 24, trous 21 x 12,5).
+Pour régénérer :  pip install manifold3d trimesh matplotlib
+                  python3 exporter.py   puis   python3 verif.py
