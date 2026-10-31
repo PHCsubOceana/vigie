@@ -58,6 +58,8 @@ static const char *TAG = "yeux";
 #define DEBATTEMENT_Y 20.0f
 #define FERME_Y     86.0f                            /* hauteur où les paupières se rejoignent */
 #define NB_TEINTES  64
+#define MICRO_X     0.08f                            /* petits mouvements de l'iris : environ 2 pixels */
+#define MICRO_Y     0.06f                            /* et 1 pixel en hauteur */
 
 #define VISAGE_PERDU_US  (1500 * 1000)
 #define MIRE_US          (5000 * 1000)
@@ -290,7 +292,8 @@ static void preparer_teintes(const oeil_t *o)
     }
 }
 
-static void dessiner_oeil(int n, const oeil_t *o)
+/* Calcule et envoie une seule bande : les deux yeux avancent ainsi au même rythme. */
+static void dessiner_bande(int n, const oeil_t *o, int y0)
 {
     const uint16_t noir = rvb(0, 0, 0);
     const uint16_t blanc = rvb(245, 248, 255);
@@ -302,37 +305,35 @@ static void dessiner_oeil(int n, const oeil_t *o)
     const int ex = o->ix - 15, ey = o->iy - 17;          /* grand reflet */
     const int fx = o->ix + 13, fy = o->iy + 14;          /* petit reflet */
 
-    for (int y0 = 0; y0 < COTE; y0 += LIGNES) {
-        uint16_t *p = bande;
-        for (int y = y0; y < y0 + LIGNES; y++) {
-            const int dy = y - CENTRE;
-            const int iy = y - o->iy;
-            for (int x = 0; x < COTE; x++) {
-                const int dx = x - CENTRE;
-                uint16_t c;
-                if (dx * dx + dy * dy > CENTRE * CENTRE) {
-                    c = noir;                            /* hors du disque visible */
-                } else if (y < o->haut + courbe_haut[x] || y > o->bas - courbe_bas[x]) {
-                    c = paupiere;
+    uint16_t *p = bande;
+    for (int y = y0; y < y0 + LIGNES; y++) {
+        const int dy = y - CENTRE;
+        const int iy = y - o->iy;
+        for (int x = 0; x < COTE; x++) {
+            const int dx = x - CENTRE;
+            uint16_t c;
+            if (dx * dx + dy * dy > CENTRE * CENTRE) {
+                c = noir;                            /* hors du disque visible */
+            } else if (y < o->haut + courbe_haut[x] || y > o->bas - courbe_bas[x]) {
+                c = paupiere;
+            } else {
+                const int ix = x - o->ix;
+                const uint32_t d2 = (uint32_t)(ix * ix + iy * iy);
+                const int ax = x - ex, ay = y - ey, bx = x - fx, by = y - fy;
+                if (ax * ax + ay * ay < 90 || bx * bx + by * by < 18) {
+                    c = blanc;
+                } else if (d2 < pupille2) {
+                    c = noir;
+                } else if (d2 < iris2) {
+                    c = teintes[(d2 * echelle) >> 16];
                 } else {
-                    const int ix = x - o->ix;
-                    const uint32_t d2 = (uint32_t)(ix * ix + iy * iy);
-                    const int ax = x - ex, ay = y - ey, bx = x - fx, by = y - fy;
-                    if (ax * ax + ay * ay < 90 || bx * bx + by * by < 18) {
-                        c = blanc;
-                    } else if (d2 < pupille2) {
-                        c = noir;
-                    } else if (d2 < iris2) {
-                        c = teintes[(d2 * echelle) >> 16];
-                    } else {
-                        c = fond;
-                    }
+                    c = fond;
                 }
-                *p++ = c;
             }
+            *p++ = c;
         }
-        envoyer_bande(n, y0, LIGNES);
     }
+    envoyer_bande(n, y0, LIGNES);
 }
 
 static void dessiner_uni(int n, uint16_t couleur, int bande_blanche)
@@ -485,7 +486,8 @@ static void tache(void *arg)
     float clin = 0;                               /* 0 ouvert, 1 fermé */
     int clin_sens = 0;
     int64_t prochain_clin = esp_timer_get_time() + 2000000;
-    int64_t prochain_regard = 0;
+    int64_t prochain_regard = 0, prochain_micro = 0;
+    float micro_x = 0, micro_y = 0;
     int64_t avant = esp_timer_get_time();
     oeil_t dernier[2];
     memset(dernier, 0, sizeof(dernier));
@@ -571,13 +573,33 @@ static void tache(void *arg)
                 but_y = hasard(0.0f, 0.3f);
                 prochain_regard = maintenant + (int64_t)hasard(0.4e6f, 1.1e6f);
             } else {
-                but_x = hasard(-0.6f, 0.6f);
-                but_y = hasard(-0.4f, 0.4f);
-                prochain_regard = maintenant + (int64_t)hasard(1.2e6f, 4.0e6f);
+                but_x = hasard(-0.7f, 0.7f);
+                but_y = hasard(-0.45f, 0.45f);
+                prochain_regard = maintenant + (int64_t)hasard(1.2e6f, 3.5e6f);
             }
         }
-        gx = vers(gx, but_x, visage ? 9.0f : 16.0f, dt);
-        gy = vers(gy, but_y, visage ? 9.0f : 16.0f, dt);
+
+        /* Un œil éveillé n'est jamais immobile, même quand il suit un visage.
+         * Rien pendant le sommeil, sans liaison ou pendant un essai de regard fixe. */
+        if (fixe || endormi || !liaison) {
+            micro_x = 0;
+            micro_y = 0;
+        } else if (maintenant >= prochain_micro) {
+            micro_x = hasard(-MICRO_X, MICRO_X);
+            micro_y = hasard(-MICRO_Y, MICRO_Y);
+            prochain_micro = maintenant + (int64_t)hasard(0.5e6f, 1.5e6f);
+        }
+        const float cx = fmaxf(-1.0f, fminf(1.0f, but_x + micro_x));
+        const float cy = fmaxf(-1.0f, fminf(1.0f, but_y + micro_y));
+        /* Pendant un clignement, l'iris ne bouge pas : il changerait de place pendant que les
+         * paupières passent, et l'œil semblerait tourner. Il se replace une fois caché. */
+        if (clin >= 1.0f) {
+            gx = cx;
+            gy = cy;
+        } else if (clin_sens == 0) {
+            gx = vers(gx, cx, visage ? 9.0f : 16.0f, dt);
+            gy = vers(gy, cy, visage ? 9.0f : 16.0f, dt);
+        }
         proche = vers(proche, visage ? ft : 0.0f, 4.0f, dt);
 
         /* Clignement : environ 0,2 s, jamais pendant le sommeil. */
@@ -618,10 +640,22 @@ static void tache(void *arg)
 
         /* On n'envoie que ce qui a changé. */
         preparer_teintes(&o[0]);
+        bool change[2];
         for (int n = 0; n < 2; n++) {
-            if (forcer || memcmp(&o[n], &dernier[n], sizeof(oeil_t)) != 0) {
-                dessiner_oeil(n, &o[n]);
-                dernier[n] = o[n];
+            change[n] = forcer || memcmp(&o[n], &dernier[n], sizeof(oeil_t)) != 0;
+            dernier[n] = o[n];
+        }
+        /* Une bande pour chaque œil, à tour de rôle. En envoyant un œil entier puis l'autre,
+         * le second avait une image de retard : cela se voyait pendant les clignements. */
+        const int nb_bandes = COTE / LIGNES;
+        for (int i = 0; i < nb_bandes; i++) {
+            /* Au clignement, du bord vers le milieu : les deux paupières avancent ensemble,
+             * au lieu d'un balayage de haut en bas. */
+            const int rang = clin > 0.0f ? (i % 2 == 0 ? i / 2 : nb_bandes - 1 - i / 2) : i;
+            for (int n = 0; n < 2; n++) {
+                if (change[n]) {
+                    dessiner_bande(n, &o[n], rang * LIGNES);
+                }
             }
         }
         forcer = false;
