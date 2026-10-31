@@ -62,6 +62,7 @@ static const char *TAG = "yeux";
 #define VISAGE_PERDU_US  (1500 * 1000)
 #define MIRE_US          (5000 * 1000)
 #define FIXE_US          (30000 * 1000)
+#define REPERE_US        (180LL * 1000 * 1000)
 
 /* --- Ce que demandent les autres tâches ---------------------------------------------------- */
 
@@ -69,7 +70,7 @@ static portMUX_TYPE verrou = portMUX_INITIALIZER_UNLOCKED;
 static yeux_humeur_t d_humeur = YEUX_CALME;
 static bool d_liaison = true, d_present = true, d_visage = false;
 static float d_x = 0, d_y = 0, d_taille = 0;
-static int64_t d_visage_vu = 0, d_mire_fin = 0, d_fixe_fin = 0;
+static int64_t d_visage_vu = 0, d_mire_fin = 0, d_fixe_fin = 0, d_repere_fin = 0;
 static float d_fixe_x = 0;
 static bool demarre = false;
 
@@ -114,6 +115,14 @@ void yeux_fixer(bool actif, float x)
     portENTER_CRITICAL(&verrou);
     d_fixe_x = x;
     d_fixe_fin = fin;
+    portEXIT_CRITICAL(&verrou);
+}
+
+void yeux_repere(bool actif)
+{
+    int64_t fin = actif ? esp_timer_get_time() + REPERE_US : 0;
+    portENTER_CRITICAL(&verrou);
+    d_repere_fin = fin;
     portEXIT_CRITICAL(&verrou);
 }
 
@@ -338,6 +347,23 @@ static void dessiner_uni(int n, uint16_t couleur, int bande_blanche)
     }
 }
 
+/* Un point de 5 pixels de large au centre exact de l'écran, sur fond noir. */
+static void dessiner_repere(int n)
+{
+    const uint16_t noir = rvb(0, 0, 0), blanc = rvb(255, 255, 255);
+    for (int y0 = 0; y0 < COTE; y0 += LIGNES) {
+        uint16_t *p = bande;
+        for (int y = y0; y < y0 + LIGNES; y++) {
+            for (int x = 0; x < COTE; x++) {
+                /* Le centre tombe entre les pixels 79 et 80. */
+                const int dx = 2 * x + 1 - COTE, dy = 2 * y + 1 - COTE;
+                *p++ = dx * dx + dy * dy <= 36 ? blanc : noir;
+            }
+        }
+        envoyer_bande(n, y0, LIGNES);
+    }
+}
+
 /* --- Rétroéclairage ------------------------------------------------------------------------------ */
 
 static esp_err_t lumiere_init(void)
@@ -463,7 +489,7 @@ static void tache(void *arg)
     int64_t avant = esp_timer_get_time();
     oeil_t dernier[2];
     memset(dernier, 0, sizeof(dernier));
-    bool forcer = true, mire_affichee = false;
+    bool forcer = true, mire_affichee = false, repere_affiche = false;
 
     for (;;) {
         const int64_t maintenant = esp_timer_get_time();
@@ -478,7 +504,23 @@ static void tache(void *arg)
         const bool mire = maintenant < d_mire_fin;
         const bool fixe = maintenant < d_fixe_fin;
         const float fixe_x = d_fixe_x;
+        const bool repere = maintenant < d_repere_fin;
         portEXIT_CRITICAL(&verrou);
+
+        if (repere) {
+            if (!repere_affiche) {
+                lumiere(100);
+                dessiner_repere(0);
+                dessiner_repere(1);
+                repere_affiche = true;
+            }
+            vTaskDelay(pdMS_TO_TICKS(100));
+            continue;
+        }
+        if (repere_affiche) {
+            repere_affiche = false;
+            forcer = true;
+        }
 
         if (mire) {
             if (!mire_affichee) {
@@ -611,6 +653,7 @@ void yeux_liaison(bool ok) { (void)ok; }
 void yeux_regard(bool visage, float x, float y, float taille) { (void)visage; (void)x; (void)y; (void)taille; }
 void yeux_presence(bool present) { (void)present; }
 void yeux_fixer(bool actif, float x) { (void)actif; (void)x; }
+void yeux_repere(bool actif) { (void)actif; }
 void yeux_mire(void) {}
 
 #endif

@@ -350,6 +350,10 @@ static void traiter_commande(const char *cmd)
         bsp_display_unlock();
     } else if (!strcmp(cmd, "yeux test")) {
         yeux_mire();
+    } else if (!strcmp(cmd, "yeux repere")) {
+        yeux_repere(true);
+    } else if (!strcmp(cmd, "yeux normal")) {
+        yeux_repere(false);
     } else if (!strcmp(cmd, "yeux gauche")) {
         yeux_fixer(true, -1.0f);
     } else if (!strcmp(cmd, "yeux droite")) {

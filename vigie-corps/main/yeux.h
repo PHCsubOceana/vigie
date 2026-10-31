@@ -35,5 +35,8 @@ void yeux_presence(bool present);
  * actif = false rend le regard au suivi du visage. */
 void yeux_fixer(bool actif, float x);
 
+/* Pour mesurer : un point au centre de chaque écran pendant 3 min (false : retour normal). */
+void yeux_repere(bool actif);
+
 /* Mire de contrôle pendant 5 s : œil 1 rouge, œil 2 bleu, bande blanche en haut. */
 void yeux_mire(void);
