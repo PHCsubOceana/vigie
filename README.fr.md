@@ -31,6 +31,9 @@ Le guide de fabrication pas à pas est publié sur [explorations360.com](https:/
 
 Chaque dossier a son propre README (en français) avec l'installation détaillée.
 
+Pièces à imprimer en 3D : [`vigie/3D/`](vigie/3D/) (boîtier du Jetson) et
+[`vigie-corps/3D/`](vigie-corps/3D/) (corps du robot pour l'écran).
+
 ## Matériel
 
 - NVIDIA Jetson Orin Nano Super Developer Kit (8 Go), JetPack 6.2.x
@@ -63,4 +66,5 @@ détenteurs respectifs.
 
 [MIT](LICENSE) © 2026 Philippe Carrez, explorations360.
 La police Nunito incluse dans `vigie-corps/main/fonts/` est sous licence
-[SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt).
+[SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt). La police Poppins de
+`vigie/3D/jetson-boitier-impression/source/` est sous la même licence.

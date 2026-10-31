@@ -1,0 +1,16 @@
+Boîtier du Jetson Orin Nano (Super) Developer Kit, explorations360 (31/10/2026)
+
+01_bac.3mf        : bleu nuit seul, posé sur le fond. 122 x 98 x 43 mm.
+02_couvercle.3mf  : bleu nuit (extrudeur 1) + orange (extrudeur 2) + bleu ciel (extrudeur 3, « explorations »), posé sur le dessus. 122 x 98 x 13 mm.
+Aucun support. Couche 0,2 mm, remplissage 15 %, 3 périmètres. PLA.
+
+Visserie : 4 vis M3x12 tête fraisée dans les coins (couvercle sur le bac), 4 patins adhésifs Ø12 sous le bac.
+
+Cotes du kit retenues (à vérifier avant d'imprimer) : 103 x 91 x 35 mm hors tout (mesuré),
+prises sur un grand côté, entre 3 et 30 mm au-dessus du fond du bac.
+Tout est paramétré en tête de source/jetson_boitier.py ; relancer python source/exporter.py, puis python source/verif.py.
+Il faut Python 3 avec manifold3d, numpy, scipy, matplotlib et trimesh (conception seulement, pas sur le Jetson).
+Ces scripts réécrivent les 3MF, les STL et les données de l'aperçu. Si une cote change, relire aussi les textes de apercu-3d.html.
+Police Poppins fournie dans source/ (licence OFL, voir OFL-Poppins.txt).
+
+apercu-3d.html : aperçu 3D interactif, ouvert ou fermé, avec le Jetson dedans. S'ouvre par un double-clic, sans connexion.

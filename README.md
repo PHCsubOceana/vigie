@@ -33,6 +33,9 @@ The step-by-step build guide (in French) is published on
 Each folder has its own README (in French) with detailed setup steps. The user interface,
 the LLM prompts and the generated sentences are in French.
 
+3D-printable parts: [`vigie/3D/`](vigie/3D/) (Jetson case) and
+[`vigie-corps/3D/`](vigie-corps/3D/) (robot body for the screen).
+
 ## Hardware
 
 - NVIDIA Jetson Orin Nano Super Developer Kit (8 GB), JetPack 6.2.x
@@ -65,4 +68,5 @@ respective owners.
 
 [MIT](LICENSE) © 2026 Philippe Carrez, explorations360.
 The Nunito font bundled in `vigie-corps/main/fonts/` is licensed under the
-[SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt).
+[SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt). The Poppins font in
+`vigie/3D/jetson-boitier-impression/source/` is under the same license.

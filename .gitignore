@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
+# Données de l'aperçu 3D, régénérées par exporter.py
+vue.json
 # Secrets et données locales : ne jamais publier
 vigie.env
 courrier.toml

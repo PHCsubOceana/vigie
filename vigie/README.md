@@ -111,3 +111,21 @@ tail ~/vigie/journal.jsonl      # historique des événements
 ```
 
 Pour libérer le GPU du Jetson : `sudo systemctl stop vigie` (arrête aussi le tri du courrier).
+
+## Boîtier imprimé
+
+Le dossier `3D/jetson-boitier-impression/` contient un boîtier pour le Jetson Orin Nano
+(Super) Developer Kit, en deux pièces imprimées sans support :
+
+- **le bac** (122 × 98 × 43 mm, bleu nuit) : fentes d'aération sur l'avant et les côtés, fond
+  percé sous la carte pour le SSD, grande fenêtre à l'arrière pour toutes les prises,
+  colonnes de vis dans les quatre coins ;
+- **le couvercle** (122 × 98 × 13 mm) : grande grille ronde au-dessus du ventilateur,
+  satellite ventilé et logotype explorations360 en trois couleurs (bleu nuit, orange,
+  bleu ciel), avec un pictogramme « centre du réseau » : le Jetson reçoit tout et
+  redistribue aux écrans.
+
+Visserie : 4 vis M3 × 12 à tête fraisée, et 4 patins adhésifs de 12 mm sous le bac. Le kit
+mesure 103 × 91 × 35 mm (pieds et ventilateur compris) ; il est tenu d'avant en arrière avec
+1 mm de jeu. Ouvrir `apercu-3d.html` pour voir le boîtier ouvert ou fermé, avec le Jetson
+dedans.
