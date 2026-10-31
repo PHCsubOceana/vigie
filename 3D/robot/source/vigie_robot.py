@@ -528,7 +528,8 @@ def socle():
     relief = 0.8
     bleu_txt = poser(t1, relief)
     orange_txt = poser(t2, relief)
-    return {"bleu": s + bleu_txt, "orange": orange_txt}, larg
+    # « explorations » en bleu ciel (extrudeur 3), comme sur le couvercle du boîtier du Jetson
+    return {"bleu": s, "orange": orange_txt, "ciel": bleu_txt}, larg
 
 
 # ---------------------------------------------------------------- orientation d'impression

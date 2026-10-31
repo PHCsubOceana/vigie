@@ -1,4 +1,4 @@
-"""Exports : un 3MF PrusaSlicer par pièce (volumes bleu = extrudeur 1, orange = extrudeur 2),
+"""Exports : un 3MF PrusaSlicer par pièce (volumes bleu = extrudeur 1, orange = 2, bleu ciel = 3),
 STL par couleur, et données légères pour la visionneuse 3D."""
 import base64, io, json, os, zipfile
 import numpy as np
@@ -8,7 +8,7 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.dirname(ICI)          # les fichiers vont dans le dossier parent de source/
 os.makedirs(f"{OUT}/stl", exist_ok=True)
 DATE_ZIP = (2026, 1, 1, 0, 0, 0)    # date fixe : à modèle égal et sur une même machine, 3MF identique
-EXTRUDEUR = {"bleu": 1, "orange": 2}
+EXTRUDEUR = {"bleu": 1, "orange": 2, "ciel": 3}
 
 
 def maillage(m_):
@@ -49,7 +49,7 @@ def ecrire_stl(path, v, f):
 def ecrire_3mf(path, nom, volumes):
     verts, tris, plages = [], [], []
     off = 0
-    for couleur in ("bleu", "orange"):
+    for couleur in ("bleu", "orange", "ciel"):
         if couleur not in volumes:
             continue
         v, f = maillage(volumes[couleur])

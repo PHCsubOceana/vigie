@@ -130,7 +130,7 @@ avertissement sur la version du firmware de la puce Wi-Fi au démarrage est sans
 ## Corps imprimé
 
 Le corps de robot est dans [`../3D/robot/`](../3D/robot/) : huit pièces sans support, en bleu
-nuit et orange (Prusa avec MMU3). [`../3D/Vigie_Impressions.3mf`](../3D/Vigie_Impressions.3mf)
+nuit et orange, avec « explorations » en bleu ciel sur le socle (Prusa avec MMU3). [`../3D/Vigie_Impressions.3mf`](../3D/Vigie_Impressions.3mf)
 regroupe les plateaux prêts à imprimer, `apercu-3d.html` montre la maquette 3D et
 `LISEZMOI.txt` donne le montage et la visserie. Licence : [`../3D/LICENCE.md`](../3D/LICENCE.md).
 

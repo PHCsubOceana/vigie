@@ -1,7 +1,7 @@
 VIGIE : corps imprimable (Prusa MK4S + MMU3)
 
 Ouvrir chaque .3mf dans PrusaSlicer : la pièce est déjà posée dans le bon sens,
-les volumes sont affectés à l'extrudeur 1 (bleu nuit) et 2 (orange).
+les volumes sont affectés à l'extrudeur 1 (bleu nuit), 2 (orange) et, pour le socle, 3 (bleu ciel).
 Aucun support à activer.
 Version du 29/10 : toutes les pièces sont dans le bon sens (avant, elles sortaient en miroir),
 sauf la tête, gardée volontairement dans son sens précédent.
@@ -14,11 +14,12 @@ Pastille de mousse au fond de chaque fourreau, à couper selon la longueur de l'
 31/10 (3) : tête et capot de tête, troisième vis de capot en haut de la tête (même vis que les deux bossages du bas).
 31/10 (4) : capot de tête, cinq ouïes groupées au centre, aucune sous les ergots.
 31/10 (5) : aucun changement de forme. Police fournie, export reproductible, aperçu 3D, contrôle des plateaux.
+31/10 (6) : socle, « explorations » en bleu ciel (extrudeur 3), comme sur le couvercle du Jetson. Forme inchangée.
 Couche 0,2 mm, remplissage 15 %, 3 périmètres.
 
 01_corps, 02_tete    : face avant sur le plateau, incrustations orange sur 0,6 mm
                        (le corps porte aussi la capsule caméra et sa branche)
-03_socle             : logotype en relief ("360" orange) sur la dernière couche
+03_socle             : logotype en relief sur les dernières couches, « explorations » bleu ciel (extrudeur 3), « 360 » orange
 04 à 07              : une seule couleur, à plat (05 = capot de tête avec ses deux fourreaux d'ergots, 06 = capot caméra)
 08_grille_capot      : grille « play » orange, collerette sur le plateau (orange, extrudeur 2)
 
