@@ -29,3 +29,5 @@ Cotes à vérifier : T_OEIL (épaisseur du module DualEye, 6 mm estimé),
 CAM_H et CAM_TROUS (caméra OV5647 au format Raspberry Pi v1.3 : 25 x 24, trous 21 x 12,5).
 Pour régénérer :  pip install manifold3d trimesh matplotlib
                   python3 exporter.py   puis   python3 verif.py
+
+Licence : fichiers 3D sous CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/deed.fr), citer explorations360. Scripts de source/ sous MIT. Nom et logo explorations360 réservés.

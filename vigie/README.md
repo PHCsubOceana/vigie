@@ -129,3 +129,6 @@ Visserie : 4 vis M3 × 12 à tête fraisée, et 4 patins adhésifs de 12 mm sous
 mesure 103 × 91 × 35 mm (pieds et ventilateur compris) ; il est tenu d'avant en arrière avec
 1 mm de jeu. Ouvrir `apercu-3d.html` pour voir le boîtier ouvert ou fermé, avec le Jetson
 dedans.
+
+Licence : fichiers 3D sous CC BY 4.0, scripts sous MIT, nom et logo réservés (voir
+`3D/LICENCE.md`).

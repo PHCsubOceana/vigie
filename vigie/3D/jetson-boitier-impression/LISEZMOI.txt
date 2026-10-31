@@ -14,3 +14,5 @@ Ces scripts réécrivent les 3MF, les STL et les données de l'aperçu. Si une c
 Police Poppins fournie dans source/ (licence OFL, voir OFL-Poppins.txt).
 
 apercu-3d.html : aperçu 3D interactif, ouvert ou fermé, avec le Jetson dedans. S'ouvre par un double-clic, sans connexion.
+
+Licence : fichiers 3D sous CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/deed.fr), citer explorations360. Scripts de source/ sous MIT. Nom et logo explorations360 réservés.

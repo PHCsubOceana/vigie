@@ -70,3 +70,7 @@ respective owners.
 The Nunito font bundled in `vigie-corps/main/fonts/` is licensed under the
 [SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt). The Poppins font in
 `vigie/3D/jetson-boitier-impression/source/` is under the same license.
+
+The 3D files (3MF, STL, 3D preview) in `vigie/3D/` and `vigie-corps/3D/` are licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): see the `LICENCE.md` in each folder.
+Their Python scripts stay under MIT. The explorations360 name and logo are reserved.

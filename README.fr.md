@@ -68,3 +68,7 @@ détenteurs respectifs.
 La police Nunito incluse dans `vigie-corps/main/fonts/` est sous licence
 [SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt). La police Poppins de
 `vigie/3D/jetson-boitier-impression/source/` est sous la même licence.
+
+Les fichiers 3D (3MF, STL, aperçu 3D) de `vigie/3D/` et `vigie-corps/3D/` sont sous
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr) : voir le `LICENCE.md` de chaque
+dossier. Leurs scripts Python restent sous MIT. Le nom et le logo explorations360 sont réservés.
