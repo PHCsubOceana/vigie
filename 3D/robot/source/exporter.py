@@ -4,8 +4,10 @@ import base64, io, json, os, zipfile
 import numpy as np
 from vigie_robot import *
 
-OUT = "vigie-corps-impression"
+ICI = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.dirname(ICI)          # les fichiers vont dans le dossier parent de source/
 os.makedirs(f"{OUT}/stl", exist_ok=True)
+DATE_ZIP = (2026, 1, 1, 0, 0, 0)    # date fixe : à modèle égal et sur une même machine, 3MF identique
 EXTRUDEUR = {"bleu": 1, "orange": 2}
 
 
@@ -86,10 +88,10 @@ def ecrire_3mf(path, nom, volumes):
     rels = ('<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             '<Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>')
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("[Content_Types].xml", ct)
-        z.writestr("_rels/.rels", rels)
-        z.writestr("3D/3dmodel.model", model)
-        z.writestr("Metadata/Slic3r_PE_model.config", "\n".join(cfg))
+        z.writestr(zipfile.ZipInfo("[Content_Types].xml", DATE_ZIP), ct, zipfile.ZIP_DEFLATED)
+        z.writestr(zipfile.ZipInfo("_rels/.rels", DATE_ZIP), rels, zipfile.ZIP_DEFLATED)
+        z.writestr(zipfile.ZipInfo("3D/3dmodel.model", DATE_ZIP), model, zipfile.ZIP_DEFLATED)
+        z.writestr(zipfile.ZipInfo("Metadata/Slic3r_PE_model.config", DATE_ZIP), "\n".join(cfg), zipfile.ZIP_DEFLATED)
     return plages
 
 
@@ -119,5 +121,17 @@ for nom in ORDRE:
         vue.append({"nom": nom, "couleur": c,
                     "v": base64.b64encode(v.astype("<f4").tobytes()).decode(),
                     "f": base64.b64encode(f.astype("<u4").tobytes()).decode()})
-json.dump(vue, open("vue.json", "w"))
-print("vue.json", round(os.path.getsize("vue.json") / 1e6, 2), "Mo")
+texte_vue = json.dumps(vue)
+print("donnees de l'apercu", round(len(texte_vue) / 1e6, 2), "Mo")
+
+# L'aperçu porte ses données : on les remplace sur place, le reste de la page ne bouge pas.
+# Ses textes (cotes, visserie, montage) restent à relire à la main si le modèle change.
+chemin_page = f"{OUT}/apercu-3d.html"
+with open(chemin_page, encoding="utf-8", newline="") as fh:
+    page = fh.read()
+ouvre = '<script id="data" type="application/json">'
+debut = page.index(ouvre) + len(ouvre)
+fin = page.index("</script>", debut)
+with open(chemin_page, "w", encoding="utf-8", newline="") as fh:
+    fh.write(page[:debut] + texte_vue + page[fin:])
+print("apercu-3d.html : donnees remplacees")

@@ -10,7 +10,7 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.dirname(ICI)
 os.makedirs(f"{OUT}/stl", exist_ok=True)
 EXTRUDEUR = {"bleu": 1, "orange": 2, "ciel": 3}
-DATE_ZIP = (2026, 1, 1, 0, 0, 0)    # date fixe : à modèle égal, 3MF identique octet pour octet
+DATE_ZIP = (2026, 1, 1, 0, 0, 0)    # date fixe : à modèle égal et sur une même machine, 3MF identique
 
 
 def maillage(m_):

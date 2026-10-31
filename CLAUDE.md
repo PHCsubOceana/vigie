@@ -9,13 +9,14 @@ Un compagnon de bureau qui surveille des agents IA et trie le courrier, en local
 
 | Dossier | Tourne sur | Langage |
 |---|---|---|
-| `vigie/` | Jetson Orin Nano (Ubuntu 22.04, **Python 3.10**) | Python, service systemd `vigie` |
+| `vigie-cerveau/` | Jetson Orin Nano (Ubuntu 22.04, **Python 3.10**) | Python, service systemd `vigie` |
 | `vigie-courrier/` | Jetson | Python, service systemd `vigie-courrier` |
 | `vigie-postes/` | PC Windows, lancé par Claude Code via **Git Bash** | bash |
 | `vigie-corps/` | écran rond Waveshare ESP32-P4 (puce v1.3) | C, ESP-IDF **6.1**, LVGL 9.6 |
+| `3D/` | imprimante 3D (`robot/`, `boitier-jetson/`) | 3MF, STL, source Python (manifold3d) |
 
 Liaisons : hooks HTTP (PC vers Jetson, port 8765, en-tête `X-Vigie-Token`), MQTT (Jetson vers
-écran, broker mosquitto). Le contrat MQTT est décrit dans `vigie/README.md` et
+écran, broker mosquitto). Le contrat MQTT est décrit dans `vigie-cerveau/README.md` et
 `vigie-corps/README.md`.
 
 ## Règles
@@ -53,7 +54,7 @@ Premier usage d'un dossier neuf : `$env:IDF_TARGET = "esp32p4"` puis `idf.py set
 
 ## Déployer sur le Jetson
 
-- `vigie/vigie.py` : copier le fichier dans `~/vigie/`, puis `sudo systemctl restart vigie`.
+- `vigie-cerveau/vigie.py` : copier le fichier dans `~/vigie/` (sur le Jetson, le dossier reste `~/vigie`), puis `sudo systemctl restart vigie`.
   Ne **pas** relancer `setup-jetson.sh` sur une installation existante (il redemande le mot de
   passe MQTT).
 - `vigie-courrier/` : copier le dossier, puis `bash installer-courrier.sh` (il garde

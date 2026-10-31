@@ -25,7 +25,7 @@ The step-by-step build guide (in French) is published on
 
 | Folder | Runs on | Role |
 |---|---|---|
-| [`vigie/`](vigie/) | Jetson | The brain: receives events, derives a mood, has the LLM write one sentence, publishes over MQTT |
+| [`vigie-cerveau/`](vigie-cerveau/) | Jetson | The brain: receives events, derives a mood, has the LLM write one sentence, publishes over MQTT |
 | [`vigie-postes/`](vigie-postes/) | each PC (Git Bash) | Installs the Claude Code hooks, tagged with machine and account names |
 | [`vigie-courrier/`](vigie-courrier/) | Jetson | Mail sorting: read-only IMAP, known contacts, classification by the LLM |
 | [`vigie-corps/`](vigie-corps/) | round screen | ESP-IDF 6.1 / LVGL 9 firmware: display, gestures, sounds, camera and face detection |
@@ -33,8 +33,8 @@ The step-by-step build guide (in French) is published on
 Each folder has its own README (in French) with detailed setup steps. The user interface,
 the LLM prompts and the generated sentences are in French.
 
-3D-printable parts: [`vigie/3D/`](vigie/3D/) (Jetson case) and
-[`vigie-corps/3D/`](vigie-corps/3D/) (robot body for the screen).
+3D-printable parts, in [`3D/`](3D/): [`3D/robot/`](3D/robot/) (robot body for the screen) and
+[`3D/boitier-jetson/`](3D/boitier-jetson/) (Jetson case).
 
 ## Hardware
 
@@ -46,7 +46,7 @@ the LLM prompts and the generated sentences are in French.
 ## Setup order
 
 1. **Jetson**: JetPack, Ollama (JetPack build) and the `llama3.2:3b-instruct-q5_K_M` model.
-2. **`vigie/`**: `bash setup-jetson.sh`. It prints the token and the Jetson's IP address.
+2. **`vigie-cerveau/`**: `bash setup-jetson.sh`. It prints the token and the Jetson's IP address.
 3. **`vigie-postes/`** on each PC: `bash installer-postes.sh` in Git Bash.
 4. **`vigie-corps/`**: set Wi-Fi and broker in menuconfig, build and flash.
 5. **`vigie-courrier/`** (optional): `bash installer-courrier.sh`, then fill in `courrier.toml`.
@@ -69,8 +69,8 @@ respective owners.
 [MIT](LICENSE) © 2026 Philippe Carrez, explorations360.
 The Nunito font bundled in `vigie-corps/main/fonts/` is licensed under the
 [SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt). The Poppins font in
-`vigie/3D/jetson-boitier-impression/source/` is under the same license.
+`3D/boitier-jetson/source/` and `3D/robot/source/` is under the same license.
 
-The 3D files (3MF, STL, 3D preview) in `vigie/3D/` and `vigie-corps/3D/` are licensed under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): see the `LICENCE.md` in each folder.
+The 3D files (3MF, STL, 3D previews) in the `3D/` folder are licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): see [`3D/LICENCE.md`](3D/LICENCE.md).
 Their Python scripts stay under MIT. The explorations360 name and logo are reserved.

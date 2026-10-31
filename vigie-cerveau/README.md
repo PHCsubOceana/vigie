@@ -18,7 +18,7 @@ autres scripts ---HTTP-->        |
 ## Installation (une fois, sur le Jetson)
 
 ```bash
-scp -r vigie <utilisateur>@<IP_DU_JETSON>:~          # depuis le PC, dossier du dépôt
+scp -r vigie-cerveau <utilisateur>@<IP_DU_JETSON>:~/vigie   # depuis le PC, dossier du dépôt
 ssh <utilisateur>@<IP_DU_JETSON>
 cd ~/vigie
 bash setup-jetson.sh
@@ -114,21 +114,6 @@ Pour libérer le GPU du Jetson : `sudo systemctl stop vigie` (arrête aussi le t
 
 ## Boîtier imprimé
 
-Le dossier `3D/jetson-boitier-impression/` contient un boîtier pour le Jetson Orin Nano
-(Super) Developer Kit, en deux pièces imprimées sans support :
-
-- **le bac** (122 × 98 × 43 mm, bleu nuit) : fentes d'aération sur l'avant et les côtés, fond
-  percé sous la carte pour le SSD, grande fenêtre à l'arrière pour toutes les prises,
-  colonnes de vis dans les quatre coins ;
-- **le couvercle** (122 × 98 × 13 mm) : grande grille ronde au-dessus du ventilateur,
-  satellite ventilé et logotype explorations360 en trois couleurs (bleu nuit, orange,
-  bleu ciel), avec un pictogramme « centre du réseau » : le Jetson reçoit tout et
-  redistribue aux écrans.
-
-Visserie : 4 vis M3 × 12 à tête fraisée, et 4 patins adhésifs de 12 mm sous le bac. Le kit
-mesure 103 × 91 × 35 mm (pieds et ventilateur compris) ; il est tenu d'avant en arrière avec
-1 mm de jeu. Ouvrir `apercu-3d.html` pour voir le boîtier ouvert ou fermé, avec le Jetson
-dedans.
-
-Licence : fichiers 3D sous CC BY 4.0, scripts sous MIT, nom et logo réservés (voir
-`3D/LICENCE.md`).
+Le Jetson a son boîtier en deux pièces, sans support : voir
+[`../3D/boitier-jetson/`](../3D/boitier-jetson/) (`LISEZMOI.txt` pour la visserie et le
+montage, `apercu-3d.html` pour le voir ouvert ou fermé, avec le Jetson dedans).

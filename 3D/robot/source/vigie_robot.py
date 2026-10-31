@@ -477,7 +477,7 @@ def capot_camera():
 
 
 # ---------------------------------------------------------------- socle
-POLICE = "/usr/share/fonts/truetype/google-fonts/Poppins-Medium.ttf"
+POLICE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Poppins-Medium.ttf")   # fournie, licence OFL
 
 
 def socle():

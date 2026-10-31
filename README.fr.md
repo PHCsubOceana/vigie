@@ -24,15 +24,15 @@ Le guide de fabrication pas à pas est publié sur [explorations360.com](https:/
 
 | Dossier | Où | Rôle |
 |---|---|---|
-| [`vigie/`](vigie/) | Jetson | Le cerveau : reçoit les événements, déduit l'humeur, fait écrire une phrase par le LLM, publie en MQTT |
+| [`vigie-cerveau/`](vigie-cerveau/) | Jetson | Le cerveau : reçoit les événements, déduit l'humeur, fait écrire une phrase par le LLM, publie en MQTT |
 | [`vigie-postes/`](vigie-postes/) | chaque PC (Git Bash) | Installe les hooks Claude Code, avec le nom du poste et du compte |
 | [`vigie-courrier/`](vigie-courrier/) | Jetson | Tri du courrier : IMAP en lecture seule, contacts connus, classement par le LLM |
 | [`vigie-corps/`](vigie-corps/) | écran rond | Firmware ESP-IDF 6.1 / LVGL 9 : affichage, gestes, sons, caméra et détection de visage |
 
 Chaque dossier a son propre README (en français) avec l'installation détaillée.
 
-Pièces à imprimer en 3D : [`vigie/3D/`](vigie/3D/) (boîtier du Jetson) et
-[`vigie-corps/3D/`](vigie-corps/3D/) (corps du robot pour l'écran).
+Pièces à imprimer en 3D, dans [`3D/`](3D/) : [`3D/robot/`](3D/robot/) (corps du robot pour l'écran) et
+[`3D/boitier-jetson/`](3D/boitier-jetson/) (boîtier du Jetson).
 
 ## Matériel
 
@@ -44,7 +44,7 @@ Pièces à imprimer en 3D : [`vigie/3D/`](vigie/3D/) (boîtier du Jetson) et
 ## Ordre d'installation
 
 1. **Jetson** : JetPack, Ollama (variante JetPack) et le modèle `llama3.2:3b-instruct-q5_K_M`.
-2. **`vigie/`** : `bash setup-jetson.sh`. Il affiche le jeton et l'adresse IP du Jetson.
+2. **`vigie-cerveau/`** : `bash setup-jetson.sh`. Il affiche le jeton et l'adresse IP du Jetson.
 3. **`vigie-postes/`** sur chaque PC : `bash installer-postes.sh` dans Git Bash.
 4. **`vigie-corps/`** : renseigner le Wi-Fi et le broker dans menuconfig, compiler et flasher.
 5. **`vigie-courrier/`** (facultatif) : `bash installer-courrier.sh`, puis remplir `courrier.toml`.
@@ -67,8 +67,8 @@ détenteurs respectifs.
 [MIT](LICENSE) © 2026 Philippe Carrez, explorations360.
 La police Nunito incluse dans `vigie-corps/main/fonts/` est sous licence
 [SIL Open Font License 1.1](vigie-corps/main/fonts/OFL.txt). La police Poppins de
-`vigie/3D/jetson-boitier-impression/source/` est sous la même licence.
+`3D/boitier-jetson/source/` et `3D/robot/source/` est sous la même licence.
 
-Les fichiers 3D (3MF, STL, aperçu 3D) de `vigie/3D/` et `vigie-corps/3D/` sont sous
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr) : voir le `LICENCE.md` de chaque
-dossier. Leurs scripts Python restent sous MIT. Le nom et le logo explorations360 sont réservés.
+Les fichiers 3D (3MF, STL, aperçus 3D) du dossier `3D/` sont sous
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr) : voir [`3D/LICENCE.md`](3D/LICENCE.md).
+Leurs scripts Python restent sous MIT. Le nom et le logo explorations360 sont réservés.

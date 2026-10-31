@@ -13,12 +13,13 @@ la paire du haut 12,5 mm au-dessus. Fenêtre de l'objectif inchangée.
 Pastille de mousse au fond de chaque fourreau, à couper selon la longueur de l'ergot.
 31/10 (3) : tête et capot de tête, troisième vis de capot en haut de la tête (même vis que les deux bossages du bas).
 31/10 (4) : capot de tête, cinq ouïes groupées au centre, aucune sous les ergots.
+31/10 (5) : aucun changement de forme. Police fournie, export reproductible, aperçu 3D, contrôle des plateaux.
 Couche 0,2 mm, remplissage 15 %, 3 périmètres.
 
 01_corps, 02_tete    : face avant sur le plateau, incrustations orange sur 0,6 mm
                        (le corps porte aussi la capsule caméra et sa branche)
 03_socle             : logotype en relief ("360" orange) sur la dernière couche
-04 à 07              : une seule couleur, à plat (05 = capot de tête avec ses deux colonnes, 06 = capot caméra)
+04 à 07              : une seule couleur, à plat (05 = capot de tête avec ses deux fourreaux d'ergots, 06 = capot caméra)
 08_grille_capot      : grille « play » orange, collerette sur le plateau (orange, extrudeur 2)
 
 Dossier stl/ : les mêmes pièces séparées par couleur, si besoin
@@ -27,7 +28,18 @@ Dossier stl/ : les mêmes pièces séparées par couleur, si besoin
 Dossier source/ : le modèle paramétrique (Python, manifold3d).
 Cotes à vérifier : T_OEIL (épaisseur du module DualEye, 6 mm estimé),
 CAM_H et CAM_TROUS (caméra OV5647 au format Raspberry Pi v1.3 : 25 x 24, trous 21 x 12,5).
-Pour régénérer :  pip install manifold3d trimesh matplotlib
-                  python3 exporter.py   puis   python3 verif.py
+Pour régénérer :  pip install manifold3d numpy scipy trimesh matplotlib
+                  python3 source/exporter.py   puis   python3 source/verif.py
+                  (se lance de n'importe où ; réécrit les 3MF, les STL et les données de apercu-3d.html.
+                  À modèle égal et sur une même machine, les 3MF sont identiques. D'un ordinateur à l'autre,
+                  la compression et l'ordre des triangles peuvent varier, pas la forme. Si une cote change,
+                  relire aussi les textes de apercu-3d.html.)
+Police Poppins fournie dans source/ (licence OFL, voir OFL-Poppins.txt).
+
+apercu-3d.html : aperçu 3D interactif (assemblé, éclaté, vue arrière, électronique).
+S'ouvre par un double-clic, sans connexion. La tête y apparaît dans son sens imprimé.
+
+Plateaux PrusaSlicer (../Vigie_Impressions.3mf) : après les avoir refaits, lancer
+python3 source/verifier_plateaux.py : il signale une pièce périmée ou en miroir.
 
 Licence : fichiers 3D sous CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/deed.fr), citer explorations360. Scripts de source/ sous MIT. Nom et logo explorations360 réservés.
