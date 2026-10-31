@@ -69,4 +69,55 @@ menu "Vigie"
 
     endmenu
 
+    menu "Yeux"
+
+        config VIGIE_YEUX
+            bool "Yeux DualEye 0,71 pouce (connecteur 40 broches)"
+            default y
+            help
+                Sans module branché, cette option ne gêne rien. Câblage dans le README.
+
+        config VIGIE_YEUX_SPI_MHZ
+            int "Vitesse du bus SPI (MHz)"
+            range 5 40
+            default 20
+            depends on VIGIE_YEUX
+            help
+                20 MHz donne environ 25 images par seconde. Baisser si l'image
+                est parasitée (fils longs), monter seulement avec des fils courts.
+
+        config VIGIE_YEUX_LUMIERE
+            int "Luminosité (%)"
+            range 5 100
+            default 80
+            depends on VIGIE_YEUX
+
+        config VIGIE_YEUX_OEIL1_RETOURNE
+            bool "Œil 1 à l'envers (rotation de 180°)"
+            default n
+            depends on VIGIE_YEUX
+            help
+                Mire « yeux test » : la bande blanche doit être en haut.
+
+        config VIGIE_YEUX_OEIL2_RETOURNE
+            bool "Œil 2 à l'envers (rotation de 180°)"
+            default n
+            depends on VIGIE_YEUX
+
+        config VIGIE_YEUX_BGR
+            bool "Rouge et bleu inversés"
+            default n
+            depends on VIGIE_YEUX
+            help
+                Mire « yeux test » : l'œil 1 doit être rouge et l'œil 2 bleu.
+
+        config VIGIE_YEUX_INVERSE_X
+            bool "Le regard part du mauvais côté"
+            default n
+            depends on VIGIE_YEUX
+            help
+                Les yeux doivent suivre le visage. S'ils le fuient, activer cette option.
+
+    endmenu
+
 endmenu

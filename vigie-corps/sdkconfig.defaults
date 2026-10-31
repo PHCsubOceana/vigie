@@ -45,3 +45,6 @@ CONFIG_CAMERA_OV5647_MIPI_DEFAULT_FMT_RAW8_800X800_50FPS=y
 # sur puce v1.3, esp_ipa pour IDF 6 plante (Illegal instruction, esp-video-components #99).
 # À réactiver quand une version corrigée d'esp_video sera publiée.
 # CONFIG_ESP_VIDEO_ENABLE_ISP_PIPELINE_CONTROLLER is not set
+
+# Yeux : la RAM interne est juste au démarrage, le pilote SPI n'a pas besoin d'y loger.
+# CONFIG_SPI_MASTER_ISR_IN_IRAM is not set

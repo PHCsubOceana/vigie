@@ -53,6 +53,43 @@ horizontal. Image à l'envers : change le retournement vertical. Sans caméra, l
 Si ESP-DL refuse de compiler : mettre en commentaire la ligne `espressif/human_face_detect`
 de `main/idf_component.yml`. Le firmware garde la caméra et l'aperçu, sans le visage.
 
+## Yeux
+
+Module Waveshare 0,71" DualEye (deux écrans ronds GC9D01, 160 × 160), sur le connecteur
+40 broches. Repérer les broches par leur **nom GPIO** sur la carte. Les numéros « J8 » sont ceux
+du schéma Waveshare.
+
+| Module | Fil d'origine | Carte | J8 |
+|---|---|---|---|
+| VCC | rouge | **3V3** (jamais 5 V) | 23 |
+| GND | noir (2ᵉ fil) | GND | 15 |
+| DIN | marron | GPIO50 | 17 |
+| CLK | violet | GPIO51 | 11 |
+| CS1 | bleu | GPIO32 | 9 |
+| CS2 | vert | GPIO49 | 16 |
+| DC | orange | GPIO52 | 5 |
+| RST1 | jaune | GPIO28 | 25 |
+| RST2 | blanc | GPIO20 | 27 |
+| BL1 | noir (10ᵉ fil) | GPIO21 | 29 |
+| BL2 | gris | GPIO29 | 33 |
+
+**Jamais de 5 V sur VCC** : le module adapte ses signaux à VCC et renverrait du 5 V vers les
+GPIO de la carte, qui ne le supportent pas.
+
+L'iris prend la couleur de l'humeur, le regard suit le visage et les paupières clignent. Sans
+liaison, les yeux sont gris et mi-clos ; sans personne devant et sans rien à signaler, ils
+s'assoupissent.
+
+**Contrôle après montage** : `mosquitto_pub … -t vigie/commande -m "yeux test"`. Pendant 5 s,
+l'œil 1 est rouge, l'œil 2 bleu, avec une bande blanche en haut. Réglages dans menuconfig,
+**Vigie → Yeux** : œil à l'envers, rouge et bleu inversés, regard du mauvais côté, vitesse SPI.
+
+**Essai du regard** : sur `vigie/commande`, `yeux gauche`, `yeux droite` ou `yeux centre` fixent le
+regard pendant 30 s (gauche et droite vus de face). `yeux suivi` le libère tout de suite.
+
+La RAM interne est juste au démarrage : la carte redémarre en boucle
+(`assert failed: vApplicationGetTimerTaskMemory`) si le code qui y loge grossit trop.
+
 ## Compiler et flasher
 
 Il faut **VS Code** avec l'extension **ESP-IDF**, version **6.1**.
@@ -100,6 +137,7 @@ avertissement sur la version du firmware de la puce Wi-Fi au démarrage est sans
 | `main/son.c` | Sons synthétisés (codec ES8311) |
 | `main/camera.c` | Caméra (esp_video, V4L2), aperçu, regard et présence |
 | `main/visage.cpp` | Détection de visage (ESP-DL) |
+| `main/yeux.c` | Les deux yeux : dessin, regard, clignements |
 | `main/fonts/` | Police Nunito avec les accents français (licence OFL) |
 | `main/Kconfig.projbuild` | Le menu **Vigie** de menuconfig |
 | `sdkconfig.defaults` | Réglages de la carte |

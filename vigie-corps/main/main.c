@@ -26,6 +26,7 @@
 #include "vigie.h"
 #include "son.h"
 #include "wifi.h"
+#include "yeux.h"
 
 static const char *TAG = "vigie";
 
@@ -97,6 +98,7 @@ static void maj_liaison(void)
         son_jouer(SON_HORS_LIGNE);
     }
     liaison_etait_ok = (l == LIAISON_OK);
+    yeux_liaison(l == LIAISON_OK);
     bsp_display_lock((uint32_t)-1);
     ui_afficher_liaison(l);
     bsp_display_unlock();
@@ -256,6 +258,10 @@ static void traiter_etat(const char *json, int len)
 
     ESP_LOGI(TAG, "Humeur %d, %d agent(s) : %s", e.humeur, e.nb_agents, e.phrase);
     sonner_selon(&e);
+    yeux_humeur(e.humeur == VIGIE_ATTENTIVE ? YEUX_ATTENTIVE
+                : e.humeur == VIGIE_AFFAIREE ? YEUX_AFFAIREE
+                : e.humeur == VIGIE_SATISFAITE ? YEUX_SATISFAITE
+                : YEUX_CALME);
     bsp_display_lock((uint32_t)-1);
     ui_afficher_etat(&e);
     bsp_display_unlock();
@@ -342,6 +348,16 @@ static void traiter_commande(const char *cmd)
         bsp_display_lock((uint32_t)-1);
         ui_ouvrir_courrier();
         bsp_display_unlock();
+    } else if (!strcmp(cmd, "yeux test")) {
+        yeux_mire();
+    } else if (!strcmp(cmd, "yeux gauche")) {
+        yeux_fixer(true, -1.0f);
+    } else if (!strcmp(cmd, "yeux droite")) {
+        yeux_fixer(true, 1.0f);
+    } else if (!strcmp(cmd, "yeux centre")) {
+        yeux_fixer(true, 0.0f);
+    } else if (!strcmp(cmd, "yeux suivi")) {
+        yeux_fixer(false, 0.0f);
     }
 }
 
@@ -500,6 +516,7 @@ void app_main(void)
     bsp_display_backlight_on();
 
     son_init(volume);
+    yeux_demarrer();
     xTaskCreate(tache_rappel, "rappel", 2048, NULL, 2, NULL);
 
     const wifi_rappels_t rappels_wifi = {

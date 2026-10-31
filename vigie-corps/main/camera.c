@@ -43,6 +43,7 @@
 #include "visage.h"
 #include "vigie.h"
 #include "ui.h"
+#include "yeux.h"
 
 static const char *TAG = "camera";
 
@@ -448,9 +449,11 @@ static void tache(void *arg)
             snprintf(msg, sizeof(msg), "{\"visage\":true,\"x\":%.3f,\"y\":%.3f,\"taille\":%.3f,\"score\":%.2f}",
                      x, y, taille, v[0].score);
             vigie_publier("vigie/regard", msg, false);
+            yeux_regard(true, x, y, taille);
             regard_annonce = true;
         } else if (regard_annonce && maintenant - vu_le > PERDU_US) {
             vigie_publier("vigie/regard", "{\"visage\":false}", false);
+            yeux_regard(false, 0, 0, 0);
             regard_annonce = false;
         }
 
@@ -458,10 +461,12 @@ static void tache(void *arg)
             present = true;
             ESP_LOGI(TAG, "Quelqu'un est là");
             vigie_publier("vigie/presence", "present", true);
+            yeux_presence(true);
         } else if (present && maintenant - vu_le > ABSENT_US) {
             present = false;
             ESP_LOGI(TAG, "Plus personne depuis %d s", CONFIG_VIGIE_ABSENCE_S);
             vigie_publier("vigie/presence", "absent", true);
+            yeux_presence(false);
         }
 
         /* Bilan : luminosité brute mesurée sur l'image caméra, avant de la rendre. */
